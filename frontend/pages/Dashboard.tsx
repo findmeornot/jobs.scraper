@@ -1,86 +1,119 @@
-import { useState, useEffect } from "react";
+import {
+  Users,
+  Globe,
+  Hourglass,
+  CheckCircle2,
+  Activity,
+  Play,
+  RefreshCw,
+  Loader2,
+} from "lucide-react";
 import StatCard from "../components/stat-card";
-
-interface Stats {
-  total_accounts: number;
-  total_content: number;
-  pending_content: number;
-  confirmed_content: number;
-  external_accounts: number;
-}
+import { Button } from "@/components/ui/button";
+import { useDashboardStats } from "@/hooks/use-dashboard-stats";
+import { useScrape } from "@/hooks/use-scrape";
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/dashboard/stats")
-      .then((r) => r.json())
-      .then((d) => setStats(d.data))
-      .catch(() => setError("Failed to load stats"))
-      .finally(() => setLoading(false));
-  }, []);
+  const { stats, loading, error, refetch } = useDashboardStats();
+  const { isScraping, triggerScrape } = useScrape();
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-48 text-gray-400">
-        Loading...
+      <div
+        className="flex items-center justify-center h-48 text-muted-foreground"
+        role="status"
+        aria-label="Loading dashboard statistics"
+      >
+        <Loader2 className="size-5 animate-spin" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 text-red-600 rounded-lg p-4 text-sm">{error}</div>
+      <div
+        className="bg-destructive/10 text-destructive border border-destructive/20 rounded-md p-4 text-sm font-medium"
+        role="alert"
+      >
+        {error}
+      </div>
     );
   }
 
   return (
-    <div>
-      <h2 className="text-lg font-semibold text-gray-900 mb-1">Dashboard</h2>
-      <p className="text-sm text-gray-500 mb-6">Overview of your Instagram scraper</p>
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            Dashboard
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Overview of your Instagram scraper
+          </p>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={refetch}
+          aria-label="Refresh stats"
+        >
+          <RefreshCw className="size-4" />
+        </Button>
+      </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           label="Total Accounts"
           value={stats?.total_accounts ?? 0}
-          icon="👤"
+          icon={Users}
           color="blue"
         />
         <StatCard
-          label="External Accounts"
+          label="External"
           value={stats?.external_accounts ?? 0}
-          icon="🌐"
+          icon={Globe}
           color="purple"
         />
         <StatCard
-          label="Pending Content"
+          label="Total Content"
+          value={stats?.total_content ?? 0}
+          icon={Activity}
+          color="default"
+        />
+        <StatCard
+          label="Pending"
           value={stats?.pending_content ?? 0}
-          icon="⏳"
+          icon={Hourglass}
           color="yellow"
         />
         <StatCard
           label="Confirmed"
           value={stats?.confirmed_content ?? 0}
-          icon="✅"
+          icon={CheckCircle2}
           color="green"
         />
       </div>
 
-      <div className="mt-8 bg-white rounded-xl border border-gray-200 p-5">
-        <h3 className="text-sm font-semibold text-gray-800 mb-3">Quick Actions</h3>
+      <div className="bg-card text-card-foreground rounded-xl border border-border p-5">
+        <h3 className="text-sm font-semibold mb-3">Quick Actions</h3>
         <div className="flex gap-3">
-          <button
-            onClick={() =>
-              fetch("/api/instagram/content/scrape", { method: "POST" })
-                .then(() => alert("Scraping started!"))
-                .catch(() => alert("Failed to start scraping"))
-            }
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          <Button
+            onClick={triggerScrape}
+            disabled={isScraping}
+            aria-busy={isScraping}
           >
-            ▶ Trigger Scrape
-          </button>
+            {isScraping ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Scraping...
+              </>
+            ) : (
+              <>
+                <Play className="size-4" />
+                Trigger Scrape
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </div>

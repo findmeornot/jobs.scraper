@@ -1,180 +1,345 @@
-import { useState, useEffect } from "react";
-import Modal from "../components/modal";
-
-interface Province {
-  id: number;
-  name: string;
-  is_active: boolean;
-}
-
-interface Group {
-  id: number;
-  name: string;
-  is_active: boolean;
-}
-
-interface Region {
-  id: number;
-  name: string;
-  province_id: number;
-  group_id: number | null;
-  js_loker: number | null;
-  province_name: string;
-  group_name: string | null;
-  account_count: number;
-}
-
-interface RegionAccount {
-  id: number;
-  account_id: number;
-  username: string;
-  instagram_id: string | null;
-  is_active: boolean;
-}
+import { useState, useMemo } from "react";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Plus, Pencil, Trash2, Loader2, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { DataTable } from "@/components/ui/data-table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useRegions } from "@/hooks/use-regions";
+import type {
+  Region,
+  Province,
+  Group,
+  RegionAccount,
+  RegionFormData,
+  ProvinceFormData,
+  GroupFormData,
+} from "@/hooks/use-regions";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { cn } from "@/lib/utils";
 
 type ActivePanel = "regions" | "provinces" | "groups";
 
+const TABS: { id: ActivePanel; label: string }[] = [
+  { id: "regions", label: "Regions" },
+  { id: "provinces", label: "Provinces" },
+  { id: "groups", label: "Groups" },
+];
+
 export default function RegionManagement() {
+  const {
+    regions,
+    provinces,
+    groups,
+    loading,
+    regionAccounts,
+    loadingAccounts,
+    selectRegion,
+    saveRegion,
+    deleteRegion,
+    saveProvince,
+    saveGroup,
+    removeAccountFromRegion,
+  } = useRegions();
+
+  const confirm = useConfirm();
   const [activePanel, setActivePanel] = useState<ActivePanel>("regions");
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [provinces, setProvinces] = useState<Province[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
-  const [regionAccounts, setRegionAccounts] = useState<RegionAccount[]>([]);
-  const [loadingAccounts, setLoadingAccounts] = useState(false);
-
+  // Region dialog state
   const [regionModal, setRegionModal] = useState<{
     open: boolean;
     editing?: Region;
   }>({ open: false });
+  const [regionForm, setRegionForm] = useState<Partial<RegionFormData>>({});
+
+  // Province dialog state
   const [provinceModal, setProvinceModal] = useState<{
     open: boolean;
     editing?: Province;
   }>({ open: false });
+  const [provinceForm, setProvinceForm] = useState<Partial<ProvinceFormData>>({});
+
+  // Group dialog state
   const [groupModal, setGroupModal] = useState<{
     open: boolean;
     editing?: Group;
   }>({ open: false });
+  const [groupForm, setGroupForm] = useState<Partial<GroupFormData>>({});
 
-  const [form, setForm] = useState<Record<string, string | number | null>>({});
+  // Region accounts dialog state
+  const [accountsModal, setAccountsModal] = useState<{
+    open: boolean;
+    region?: Region;
+  }>({ open: false });
 
-  function loadAll() {
-    setLoading(true);
-    Promise.all([
-      fetch("/api/master/region?details=true").then((r) => r.json()),
-      fetch("/api/master/province").then((r) => r.json()),
-      fetch("/api/master/group").then((r) => r.json()),
-    ])
-      .then(([r, p, g]) => {
-        setRegions(r.results ?? []);
-        setProvinces(p.results ?? []);
-        setGroups(g.results ?? []);
-      })
-      .finally(() => setLoading(false));
+  function openAccountsForRegion(region: Region) {
+    setAccountsModal({ open: true, region });
+    selectRegion(region);
   }
 
-  useEffect(loadAll, []);
-
-  function openRegionAccounts(region: Region) {
-    setSelectedRegion(region);
-    setLoadingAccounts(true);
-    fetch(`/api/master/region/${region.id}/accounts`)
-      .then((r) => r.json())
-      .then((d) => setRegionAccounts(d.results ?? []))
-      .finally(() => setLoadingAccounts(false));
+  async function handleSaveRegion() {
+    if (!regionForm.name || !regionForm.province_id) return;
+    const ok = await saveRegion(regionForm as RegionFormData, regionModal.editing?.id);
+    if (ok) setRegionModal({ open: false });
   }
 
-  async function saveRegion() {
-    const method = regionModal.editing ? "PUT" : "POST";
-    const url = regionModal.editing
-      ? `/api/master/region/${regionModal.editing.id}`
-      : "/api/master/region";
-    await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+  async function handleDeleteRegion(region: Region) {
+    const ok = await confirm({
+      title: "Delete region?",
+      description: `"${region.name}" will be permanently deleted.`,
+      variant: "destructive",
+      confirmLabel: "Delete",
     });
-    setRegionModal({ open: false });
-    loadAll();
+    if (ok) await deleteRegion(region.id);
   }
 
-  async function deleteRegion(id: number) {
-    if (!confirm("Delete this region?")) return;
-    await fetch(`/api/master/region/${id}`, { method: "DELETE" });
-    if (selectedRegion?.id === id) setSelectedRegion(null);
-    loadAll();
+  async function handleSaveProvince() {
+    if (!provinceForm.name) return;
+    const ok = await saveProvince(provinceForm as ProvinceFormData, provinceModal.editing?.id);
+    if (ok) setProvinceModal({ open: false });
   }
 
-  async function saveProvince() {
-    const method = provinceModal.editing ? "PUT" : "POST";
-    const url = provinceModal.editing
-      ? `/api/master/province/${provinceModal.editing.id}`
-      : "/api/master/province";
-    await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    setProvinceModal({ open: false });
-    loadAll();
+  async function handleSaveGroup() {
+    if (!groupForm.name) return;
+    const ok = await saveGroup(groupForm as GroupFormData, groupModal.editing?.id);
+    if (ok) setGroupModal({ open: false });
   }
 
-  async function saveGroup() {
-    const method = groupModal.editing ? "PUT" : "POST";
-    const url = groupModal.editing
-      ? `/api/master/group/${groupModal.editing.id}`
-      : "/api/master/group";
-    await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    setGroupModal({ open: false });
-    loadAll();
-  }
+  // --- Column definitions ---
 
-  async function removeAccountFromRegion(accountId: number) {
-    if (!selectedRegion) return;
-    await fetch(
-      `/api/master/region/${selectedRegion.id}/accounts/${accountId}`,
+  const regionColumns: ColumnDef<Region>[] = useMemo(
+    () => [
       {
-        method: "DELETE",
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => (
+          <span className="font-medium text-foreground">{row.getValue("name")}</span>
+        ),
       },
-    );
-    setRegionAccounts((prev) => prev.filter((a) => a.account_id !== accountId));
-  }
+      {
+        accessorKey: "province_name",
+        header: "Province",
+        cell: ({ row }) => (
+          <span className="text-muted-foreground">{row.getValue("province_name")}</span>
+        ),
+      },
+      {
+        accessorKey: "group_name",
+        header: "Group",
+        cell: ({ row }) => {
+          const name = row.getValue<string | null>("group_name");
+          return name ? (
+            <span className="text-muted-foreground">{name}</span>
+          ) : (
+            <span className="text-muted-foreground/40">—</span>
+          );
+        },
+      },
+      {
+        accessorKey: "account_count",
+        header: "Accounts",
+        cell: ({ row }) => {
+          const count = row.getValue<number>("account_count");
+          return (
+            <Badge variant="secondary" className="tabular-nums">
+              {count}
+            </Badge>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Actions</span>,
+        enableSorting: false,
+        size: 140,
+        cell: ({ row }) => {
+          const region = row.original;
+          return (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => openAccountsForRegion(region)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Users className="size-3" />
+                Accounts
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => {
+                  setRegionForm({
+                    name: region.name,
+                    province_id: region.province_id,
+                    group_id: region.group_id,
+                    js_loker: region.js_loker,
+                  });
+                  setRegionModal({ open: true, editing: region });
+                }}
+                aria-label={`Edit ${region.name}`}
+              >
+                <Pencil className="size-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => handleDeleteRegion(region)}
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                aria-label={`Delete ${region.name}`}
+              >
+                <Trash2 className="size-3" />
+              </Button>
+            </div>
+          );
+        },
+      },
+    ],
+    [provinces, groups],
+  );
 
-  const TABS: { id: ActivePanel; label: string }[] = [
-    { id: "regions", label: "Regions" },
-    { id: "provinces", label: "Provinces" },
-    { id: "groups", label: "Groups" },
-  ];
+  const provinceColumns: ColumnDef<Province>[] = useMemo(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => (
+          <span className="font-medium text-foreground">{row.getValue("name")}</span>
+        ),
+      },
+      {
+        accessorKey: "is_active",
+        header: "Status",
+        enableSorting: false,
+        cell: ({ row }) => {
+          const active = row.getValue<boolean>("is_active");
+          return (
+            <Badge variant={active ? "default" : "outline"}>
+              {active ? "Active" : "Inactive"}
+            </Badge>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Actions</span>,
+        enableSorting: false,
+        size: 60,
+        cell: ({ row }) => {
+          const p = row.original;
+          return (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => {
+                setProvinceForm({ name: p.name, is_active: p.is_active ? 1 : 0 });
+                setProvinceModal({ open: true, editing: p });
+              }}
+              aria-label={`Edit ${p.name}`}
+            >
+              <Pencil className="size-3.5" />
+            </Button>
+          );
+        },
+      },
+    ],
+    [],
+  );
+
+  const groupColumns: ColumnDef<Group>[] = useMemo(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => (
+          <span className="font-medium text-foreground">{row.getValue("name")}</span>
+        ),
+      },
+      {
+        accessorKey: "is_active",
+        header: "Status",
+        enableSorting: false,
+        cell: ({ row }) => {
+          const active = row.getValue<boolean>("is_active");
+          return (
+            <Badge variant={active ? "default" : "outline"}>
+              {active ? "Active" : "Inactive"}
+            </Badge>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: () => <span className="sr-only">Actions</span>,
+        enableSorting: false,
+        size: 60,
+        cell: ({ row }) => {
+          const g = row.original;
+          return (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => {
+                setGroupForm({ name: g.name, is_active: g.is_active ? 1 : 0 });
+                setGroupModal({ open: true, editing: g });
+              }}
+              aria-label={`Edit ${g.name}`}
+            >
+              <Pencil className="size-3.5" />
+            </Button>
+          );
+        },
+      },
+    ],
+    [],
+  );
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">
-            Region Management
-          </h2>
-          <p className="text-sm text-gray-500">
-            Manage provinces, groups, and regions
-          </p>
-        </div>
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-semibold tracking-tight text-foreground">
+          Region Management
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Manage provinces, groups, and regions
+        </p>
       </div>
 
-      <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-muted rounded-lg p-1 w-fit">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActivePanel(tab.id)}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            className={cn(
+              "px-4 py-1.5 rounded-md text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
               activePanel === tab.id
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/70",
+            )}
           >
             {tab.label}
           </button>
@@ -182,433 +347,350 @@ export default function RegionManagement() {
       </div>
 
       {loading ? (
-        <div className="py-16 text-center text-gray-400 text-sm">
-          Loading...
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
+          <Loader2 className="size-5 animate-spin" />
         </div>
       ) : (
         <>
           {activePanel === "regions" && (
-            <div className="flex gap-4">
-              <div className="flex-1 bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-700">
-                    Regions ({regions.length})
-                  </span>
-                  <button
-                    onClick={() => {
-                      setForm({});
-                      setRegionModal({ open: true });
-                    }}
-                    className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    + Add
-                  </button>
-                </div>
-                <div className="divide-y divide-gray-50 max-h-[520px] overflow-y-auto">
-                  {regions.map((region) => (
-                    <div
-                      key={region.id}
-                      onClick={() => openRegionAccounts(region)}
-                      className={`px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                        selectedRegion?.id === region.id ? "bg-blue-50" : ""
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {region.name}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {region.province_name}
-                            {region.group_name ? ` · ${region.group_name}` : ""}
-                            {" · "}
-                            <span className="text-blue-500">
-                              {region.account_count} accounts
-                            </span>
-                          </p>
-                        </div>
-                        <div className="flex gap-1 ml-2 shrink-0">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setForm({
-                                name: region.name,
-                                province_id: region.province_id,
-                                group_id: region.group_id ?? "",
-                                js_loker: region.js_loker ?? "",
-                              });
-                              setRegionModal({ open: true, editing: region });
-                            }}
-                            className="text-xs px-2 py-1 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteRegion(region.id);
-                            }}
-                            className="text-xs px-2 py-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
-                          >
-                            Del
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {selectedRegion && (
-                <div className="w-72 bg-white rounded-xl border border-gray-200 overflow-hidden shrink-0">
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">
-                      @{selectedRegion.name}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Assigned accounts
-                    </p>
-                  </div>
-                  <div className="divide-y divide-gray-50 max-h-[480px] overflow-y-auto">
-                    {loadingAccounts ? (
-                      <div className="py-8 text-center text-gray-400 text-xs">
-                        Loading...
-                      </div>
-                    ) : regionAccounts.length === 0 ? (
-                      <div className="py-8 text-center text-gray-400 text-xs">
-                        No accounts assigned
-                      </div>
-                    ) : (
-                      regionAccounts.map((ra) => (
-                        <div
-                          key={ra.id}
-                          className="px-4 py-2.5 flex items-center justify-between"
-                        >
-                          <div>
-                            <p className="text-xs font-medium text-gray-800">
-                              @{ra.username}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {ra.instagram_id ?? "no ID"}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() =>
-                              removeAccountFromRegion(ra.account_id)
-                            }
-                            className="text-xs text-red-400 hover:text-red-600"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            <DataTable
+              columns={regionColumns}
+              data={regions}
+              searchColumn="name"
+              searchPlaceholder="Search regions..."
+              toolbarRight={
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setRegionForm({});
+                    setRegionModal({ open: true });
+                  }}
+                >
+                  <Plus className="size-4" />
+                  Add Region
+                </Button>
+              }
+            />
           )}
 
           {activePanel === "provinces" && (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                <span className="text-sm font-medium text-gray-700">
-                  Provinces ({provinces.length})
-                </span>
-                <button
+            <DataTable
+              columns={provinceColumns}
+              data={provinces}
+              searchColumn="name"
+              searchPlaceholder="Search provinces..."
+              toolbarRight={
+                <Button
+                  size="sm"
                   onClick={() => {
-                    setForm({});
+                    setProvinceForm({});
                     setProvinceModal({ open: true });
                   }}
-                  className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
-                  + Add
-                </button>
-              </div>
-              <div className="divide-y divide-gray-50">
-                {provinces.map((p) => (
-                  <div
-                    key={p.id}
-                    className="px-4 py-3 flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="text-sm text-gray-900">{p.name}</p>
-                      <span
-                        className={`text-xs ${p.is_active ? "text-green-600" : "text-gray-400"}`}
-                      >
-                        {p.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setForm({
-                            name: p.name,
-                            is_active: p.is_active ? 1 : 0,
-                          });
-                          setProvinceModal({ open: true, editing: p });
-                        }}
-                        className="text-xs text-gray-500 hover:text-blue-600"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  <Plus className="size-4" />
+                  Add Province
+                </Button>
+              }
+            />
           )}
 
           {activePanel === "groups" && (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                <span className="text-sm font-medium text-gray-700">
-                  Groups ({groups.length})
-                </span>
-                <button
+            <DataTable
+              columns={groupColumns}
+              data={groups}
+              searchColumn="name"
+              searchPlaceholder="Search groups..."
+              toolbarRight={
+                <Button
+                  size="sm"
                   onClick={() => {
-                    setForm({});
+                    setGroupForm({});
                     setGroupModal({ open: true });
                   }}
-                  className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
-                  + Add
-                </button>
-              </div>
-              <div className="divide-y divide-gray-50">
-                {groups.map((g) => (
-                  <div
-                    key={g.id}
-                    className="px-4 py-3 flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="text-sm text-gray-900">{g.name}</p>
-                      <span
-                        className={`text-xs ${g.is_active ? "text-green-600" : "text-gray-400"}`}
-                      >
-                        {g.is_active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setForm({
-                            name: g.name,
-                            is_active: g.is_active ? 1 : 0,
-                          });
-                          setGroupModal({ open: true, editing: g });
-                        }}
-                        className="text-xs text-gray-500 hover:text-blue-600"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  <Plus className="size-4" />
+                  Add Group
+                </Button>
+              }
+            />
           )}
         </>
       )}
 
-      <Modal
+      {/* Region Accounts Dialog */}
+      <Dialog
+        open={accountsModal.open}
+        onOpenChange={(open) => setAccountsModal((s) => ({ ...s, open }))}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{accountsModal.region?.name}</DialogTitle>
+            <DialogDescription>Assigned accounts</DialogDescription>
+          </DialogHeader>
+          <DialogBody className="p-0">
+            {loadingAccounts ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="size-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : regionAccounts.length === 0 ? (
+              <div className="py-10 text-center text-sm text-muted-foreground">
+                No accounts assigned to this region
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Instagram ID</TableHead>
+                    <TableHead />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {regionAccounts.map((ra: RegionAccount) => (
+                    <TableRow key={ra.id}>
+                      <TableCell className="font-medium">
+                        @{ra.username}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">
+                        {ra.instagram_id ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          onClick={() => removeAccountFromRegion(ra.account_id)}
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        >
+                          Remove
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
+
+      {/* Region Add/Edit Dialog */}
+      <Dialog
         open={regionModal.open}
-        title={regionModal.editing ? "Edit Region" : "Add Region"}
-        onClose={() => setRegionModal({ open: false })}
-        footer={
-          <>
-            <button
-              onClick={() => setRegionModal({ open: false })}
-              className="px-4 py-2 text-sm text-gray-600"
-            >
+        onOpenChange={(open) => setRegionModal((s) => ({ ...s, open }))}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {regionModal.editing ? "Edit Region" : "Add Region"}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">
+                Region Name
+              </label>
+              <Input
+                value={regionForm.name ?? ""}
+                onChange={(e) =>
+                  setRegionForm((f) => ({ ...f, name: e.target.value }))
+                }
+                placeholder="Enter region name"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">
+                Province
+              </label>
+              <Select
+                value={regionForm.province_id ? String(regionForm.province_id) : ""}
+                onValueChange={(v) =>
+                  setRegionForm((f) => ({ ...f, province_id: Number(v) }))
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select province..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {provinces.map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">
+                Group{" "}
+                <span className="text-muted-foreground font-normal">(optional)</span>
+              </label>
+              <Select
+                value={regionForm.group_id ? String(regionForm.group_id) : "__none__"}
+                onValueChange={(v) =>
+                  setRegionForm((f) => ({
+                    ...f,
+                    group_id: v === "__none__" ? null : Number(v),
+                  }))
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="No group" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No group</SelectItem>
+                  {groups.map((g) => (
+                    <SelectItem key={g.id} value={String(g.id)}>
+                      {g.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">
+                JS Loker ID{" "}
+                <span className="text-muted-foreground font-normal">(optional)</span>
+              </label>
+              <Input
+                type="number"
+                value={String(regionForm.js_loker ?? "")}
+                onChange={(e) =>
+                  setRegionForm((f) => ({
+                    ...f,
+                    js_loker: e.target.value ? Number(e.target.value) : null,
+                  }))
+                }
+                placeholder="e.g. 123"
+              />
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRegionModal({ open: false })}>
               Cancel
-            </button>
-            <button
-              onClick={saveRegion}
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+            </Button>
+            <Button
+              onClick={handleSaveRegion}
+              disabled={!regionForm.name || !regionForm.province_id}
             >
               Save
-            </button>
-          </>
-        }
-      >
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-medium text-gray-700">
-              Region Name
-            </label>
-            <input
-              type="text"
-              value={String(form.name ?? "")}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-700">
-              Province
-            </label>
-            <select
-              value={String(form.province_id ?? "")}
-              onChange={(e) =>
-                setForm({ ...form, province_id: Number(e.target.value) })
-              }
-              className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select province...</option>
-              {provinces.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-700">
-              Group (optional)
-            </label>
-            <select
-              value={String(form.group_id ?? "")}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  group_id: e.target.value ? Number(e.target.value) : null,
-                })
-              }
-              className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">No group</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-700">
-              JS Loker ID (optional)
-            </label>
-            <input
-              type="number"
-              value={String(form.js_loker ?? "")}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  js_loker: e.target.value ? Number(e.target.value) : null,
-                })
-              }
-              className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-      </Modal>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      <Modal
+      {/* Province Add/Edit Dialog */}
+      <Dialog
         open={provinceModal.open}
-        title={provinceModal.editing ? "Edit Province" : "Add Province"}
-        onClose={() => setProvinceModal({ open: false })}
-        footer={
-          <>
-            <button
-              onClick={() => setProvinceModal({ open: false })}
-              className="px-4 py-2 text-sm text-gray-600"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={saveProvince}
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-            >
-              Save
-            </button>
-          </>
-        }
+        onOpenChange={(open) => setProvinceModal((s) => ({ ...s, open }))}
       >
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-medium text-gray-700">
-              Province Name
-            </label>
-            <input
-              type="text"
-              value={String(form.name ?? "")}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          {provinceModal.editing && (
-            <div>
-              <label className="text-xs font-medium text-gray-700">
-                Status
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {provinceModal.editing ? "Edit Province" : "Add Province"}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">
+                Province Name
               </label>
-              <select
-                value={String(form.is_active ?? 1)}
+              <Input
+                value={provinceForm.name ?? ""}
                 onChange={(e) =>
-                  setForm({ ...form, is_active: Number(e.target.value) })
+                  setProvinceForm((f) => ({ ...f, name: e.target.value }))
                 }
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="1">Active</option>
-                <option value="0">Inactive</option>
-              </select>
+                placeholder="Enter province name"
+              />
             </div>
-          )}
-        </div>
-      </Modal>
+            {provinceModal.editing && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">
+                  Status
+                </label>
+                <Select
+                  value={String(provinceForm.is_active ?? 1)}
+                  onValueChange={(v) =>
+                    setProvinceForm((f) => ({ ...f, is_active: Number(v) }))
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Active</SelectItem>
+                    <SelectItem value="0">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProvinceModal({ open: false })}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveProvince} disabled={!provinceForm.name}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      <Modal
+      {/* Group Add/Edit Dialog */}
+      <Dialog
         open={groupModal.open}
-        title={groupModal.editing ? "Edit Group" : "Add Group"}
-        onClose={() => setGroupModal({ open: false })}
-        footer={
-          <>
-            <button
-              onClick={() => setGroupModal({ open: false })}
-              className="px-4 py-2 text-sm text-gray-600"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={saveGroup}
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-            >
-              Save
-            </button>
-          </>
-        }
+        onOpenChange={(open) => setGroupModal((s) => ({ ...s, open }))}
       >
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-medium text-gray-700">
-              Group Name
-            </label>
-            <input
-              type="text"
-              value={String(form.name ?? "")}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          {groupModal.editing && (
-            <div>
-              <label className="text-xs font-medium text-gray-700">
-                Status
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {groupModal.editing ? "Edit Group" : "Add Group"}
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">
+                Group Name
               </label>
-              <select
-                value={String(form.is_active ?? 1)}
+              <Input
+                value={groupForm.name ?? ""}
                 onChange={(e) =>
-                  setForm({ ...form, is_active: Number(e.target.value) })
+                  setGroupForm((f) => ({ ...f, name: e.target.value }))
                 }
-                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="1">Active</option>
-                <option value="0">Inactive</option>
-              </select>
+                placeholder="Enter group name"
+              />
             </div>
-          )}
-        </div>
-      </Modal>
+            {groupModal.editing && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">
+                  Status
+                </label>
+                <Select
+                  value={String(groupForm.is_active ?? 1)}
+                  onValueChange={(v) =>
+                    setGroupForm((f) => ({ ...f, is_active: Number(v) }))
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Active</SelectItem>
+                    <SelectItem value="0">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGroupModal({ open: false })}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveGroup} disabled={!groupForm.name}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

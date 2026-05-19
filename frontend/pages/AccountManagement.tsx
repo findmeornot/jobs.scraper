@@ -1,220 +1,219 @@
-import { useState, useEffect } from "react";
-import Modal from "../components/modal";
-import StatusBadge from "../components/status-badge";
+import { useState, useMemo } from "react";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Plus, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { DataTable } from "@/components/ui/data-table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useAccounts, type Account } from "@/hooks/use-accounts";
 
-interface Account {
-  id: number;
-  username: string;
-  instagram_id: string | null;
-  followers: number;
-  following: number;
-  is_external: boolean;
-  is_active: boolean;
-  is_manual_input: boolean;
-  created_at: string;
-}
+const columns: ColumnDef<Account>[] = [
+  {
+    accessorKey: "username",
+    header: "Username",
+    cell: ({ row }) => (
+      <span className="font-medium">@{row.getValue("username")}</span>
+    ),
+  },
+  {
+    accessorKey: "instagram_id",
+    header: "Instagram ID",
+    enableSorting: false,
+    cell: ({ row }) => (
+      <span className="font-mono text-xs text-muted-foreground">
+        {row.getValue("instagram_id") ?? "—"}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "followers",
+    header: "Followers",
+    cell: ({ row }) => {
+      const val = row.getValue<number>("followers");
+      return (
+        <span className="tabular-nums text-muted-foreground">
+          {val?.toLocaleString() ?? 0}
+        </span>
+      );
+    },
+  },
+  {
+    accessorKey: "is_external",
+    header: "Type",
+    enableSorting: false,
+    cell: ({ row }) => {
+      const isExternal = row.getValue<boolean>("is_external");
+      return (
+        <Badge variant={isExternal ? "outline" : "secondary"}>
+          {isExternal ? "External" : "Internal"}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "is_active",
+    header: "Status",
+    enableSorting: false,
+    cell: ({ row }) => {
+      const isActive = row.getValue<boolean>("is_active");
+      return (
+        <Badge variant={isActive ? "default" : "outline"}>
+          {isActive ? "Active" : "Inactive"}
+        </Badge>
+      );
+    },
+  },
+];
 
 export default function AccountManagement() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "external" | "internal">("all");
+  const {
+    loading,
+    submitting,
+    filter,
+    setFilter,
+    filteredAccounts,
+    addAccount,
+  } = useAccounts();
+
   const [addOpen, setAddOpen] = useState(false);
   const [newUsername, setNewUsername] = useState("");
   const [newIsExternal, setNewIsExternal] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [search, setSearch] = useState("");
 
-  function load() {
-    setLoading(true);
-    const query = filter === "all" ? "" : `?type=${filter === "external"}`;
-    fetch(`/api/instagram/profile${query}`)
-      .then((r) => r.json())
-      .then((d) => setAccounts(d.results ?? []))
-      .finally(() => setLoading(false));
-  }
+  const tableData = useMemo(() => filteredAccounts, [filteredAccounts]);
 
-  useEffect(load, [filter]);
-
-  async function addAccount() {
-    if (!newUsername.trim()) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/instagram/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usernames: [newUsername.trim()] }),
-      });
-      if (!res.ok) throw new Error("Failed");
+  async function handleAdd() {
+    const ok = await addAccount(newUsername, newIsExternal);
+    if (ok) {
       setAddOpen(false);
       setNewUsername("");
-      load();
-    } catch {
-      alert("Failed to add account");
-    } finally {
-      setSubmitting(false);
+      setNewIsExternal(true);
     }
   }
 
-  const filtered = accounts.filter((a) =>
-    a.username.toLowerCase().includes(search.toLowerCase()),
-  );
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-5">
+      <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Accounts</h2>
-          <p className="text-sm text-gray-500">Manage Instagram accounts</p>
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            Accounts
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage Instagram accounts
+          </p>
         </div>
-        <button
-          onClick={() => setAddOpen(true)}
-          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700"
-        >
-          + Add Account
-        </button>
+        <Button onClick={() => setAddOpen(true)} size="sm">
+          <Plus className="size-4" />
+          Add Account
+        </Button>
       </div>
 
-      <div className="flex gap-3 mb-4">
-        <input
-          type="text"
-          placeholder="Search username..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+      {loading ? (
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
+          <Loader2 className="size-5 animate-spin" />
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={tableData}
+          searchColumn="username"
+          searchPlaceholder="Search username..."
+          toolbarLeft={
+            <Select
+              value={filter}
+              onValueChange={(v) =>
+                setFilter(v as "all" | "external" | "internal")
+              }
+            >
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="Filter type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="external">External</SelectItem>
+                <SelectItem value="internal">Internal</SelectItem>
+              </SelectContent>
+            </Select>
+          }
         />
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as typeof filter)}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="all">All</option>
-          <option value="external">External</option>
-          <option value="internal">Internal</option>
-        </select>
-      </div>
+      )}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {loading ? (
-          <div className="py-12 text-center text-gray-400 text-sm">
-            Loading...
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="py-12 text-center text-gray-400 text-sm">
-            No accounts found
-          </div>
-        ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">
-                  Username
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">
-                  Instagram ID
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">
-                  Followers
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">
-                  Type
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((account) => (
-                <tr
-                  key={account.id}
-                  className="border-b border-gray-50 hover:bg-gray-50"
-                >
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                    @{account.username}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500 font-mono">
-                    {account.instagram_id ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
-                    {account.followers?.toLocaleString() ?? 0}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded font-medium ${
-                        account.is_external
-                          ? "bg-blue-50 text-blue-700"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {account.is_external ? "External" : "Internal"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded font-medium ${
-                        account.is_active
-                          ? "bg-green-50 text-green-700"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {account.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <Modal
-        open={addOpen}
-        title="Add Instagram Account"
-        onClose={() => setAddOpen(false)}
-        footer={
-          <>
-            <button
-              onClick={() => setAddOpen(false)}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-            >
+      <Dialog open={addOpen} onOpenChange={(open) => setAddOpen(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Instagram Account</DialogTitle>
+          </DialogHeader>
+          <DialogBody className="space-y-4">
+            <div className="space-y-1.5">
+              <label
+                htmlFor="new-username"
+                className="text-xs font-medium text-foreground"
+              >
+                Username
+              </label>
+              <Input
+                id="new-username"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                placeholder="e.g. company_account"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newUsername.trim()) handleAdd();
+                }}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-foreground">
+                Type
+              </label>
+              <Select
+                value={newIsExternal ? "external" : "internal"}
+                onValueChange={(v) => setNewIsExternal(v === "external")}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="external">External</SelectItem>
+                  <SelectItem value="internal">Internal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>
               Cancel
-            </button>
-            <button
-              onClick={addAccount}
+            </Button>
+            <Button
+              onClick={handleAdd}
               disabled={submitting || !newUsername.trim()}
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg disabled:opacity-50 hover:bg-blue-700"
+              aria-busy={submitting}
             >
-              {submitting ? "Adding..." : "Add Account"}
-            </button>
-          </>
-        }
-      >
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-medium text-gray-700">
-              Username
-            </label>
-            <input
-              type="text"
-              value={newUsername}
-              onChange={(e) => setNewUsername(e.target.value)}
-              placeholder="e.g. company_account"
-              className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-gray-700">Type</label>
-            <select
-              value={newIsExternal ? "external" : "internal"}
-              onChange={(e) => setNewIsExternal(e.target.value === "external")}
-              className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="external">External</option>
-              <option value="internal">Internal</option>
-            </select>
-          </div>
-        </div>
-      </Modal>
+              {submitting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add Account"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

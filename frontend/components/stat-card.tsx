@@ -1,27 +1,49 @@
+import * as React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
+type ColorVariant = "blue" | "green" | "yellow" | "purple" | "default";
+
 interface StatCardProps {
   label: string;
   value: number | string;
-  icon: string;
-  color?: "blue" | "green" | "yellow" | "purple";
+  icon: React.ComponentType<{ className?: string }>;
+  color?: ColorVariant;
 }
 
-const COLOR_MAP = {
-  blue: "bg-blue-50 text-blue-600",
-  green: "bg-green-50 text-green-600",
-  yellow: "bg-yellow-50 text-yellow-600",
-  purple: "bg-purple-50 text-purple-600",
+const COLOR_MAP: Record<ColorVariant, string> = {
+  blue: "bg-chart-1/15 text-chart-1",
+  green: "bg-chart-2/15 text-chart-2",
+  yellow: "bg-chart-4/15 text-chart-4",
+  purple: "bg-chart-5/15 text-chart-5",
+  default: "bg-muted text-muted-foreground",
 };
 
-export default function StatCard({ label, value, icon, color = "blue" }: StatCardProps) {
+export default function StatCard({
+  label,
+  value,
+  icon: Icon,
+  color = "default",
+}: StatCardProps) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{label}</p>
-        <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${COLOR_MAP[color]}`}>
-          {icon}
-        </span>
-      </div>
-      <p className="mt-2 text-2xl font-bold text-gray-900">{value}</p>
-    </div>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {label}
+        </CardTitle>
+        <div
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-md",
+            COLOR_MAP[color],
+          )}
+          aria-hidden="true"
+        >
+          <Icon className="size-4" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold text-foreground">{value}</div>
+      </CardContent>
+    </Card>
   );
 }

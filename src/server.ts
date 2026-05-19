@@ -44,6 +44,8 @@ export function startServer(): void {
     port: appConfig.port,
     routes: {
       "/": frontendIndex,
+      "/accounts": frontendIndex,
+      "/regions": frontendIndex,
       "/api/health": { GET: () => Response.json({ ok: true, ts: Date.now() }) },
       "/api/dashboard/stats": {
         GET: c(async () => {

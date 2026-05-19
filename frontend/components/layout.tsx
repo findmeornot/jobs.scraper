@@ -1,45 +1,97 @@
 import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { LayoutDashboard, Users, Map } from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
-type Page = "dashboard" | "accounts" | "regions";
+interface NavItem {
+  path: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { path: "/", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/accounts", label: "Accounts", icon: Users },
+  { path: "/regions", label: "Regions", icon: Map },
+];
 
 interface LayoutProps {
-  currentPage: Page;
-  onNavigate: (page: Page) => void;
   children: React.ReactNode;
 }
 
-const NAV_ITEMS: { id: Page; label: string; icon: string }[] = [
-  { id: "dashboard", label: "Dashboard", icon: "📊" },
-  { id: "accounts", label: "Accounts", icon: "👤" },
-  { id: "regions", label: "Regions", icon: "🗺️" },
-];
+export default function Layout({ children }: LayoutProps) {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
 
-export default function Layout({ currentPage, onNavigate, children }: LayoutProps) {
+  function isActive(path: string) {
+    return path === "/" ? pathname === "/" : pathname.startsWith(path);
+  }
+
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      <aside className="w-56 bg-white border-r border-gray-200 flex flex-col shrink-0">
-        <div className="px-4 py-5 border-b border-gray-200">
-          <h1 className="font-bold text-gray-900 text-sm leading-tight">Instagram Scraper</h1>
-          <p className="text-xs text-gray-400 mt-0.5">Job Content Manager</p>
-        </div>
-        <nav className="flex-1 px-2 py-3 space-y-0.5">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                currentPage === item.id
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
-            >
-              <span className="text-base">{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </nav>
-      </aside>
-      <main className="flex-1 overflow-auto p-6">{children}</main>
-    </div>
+    <TooltipProvider>
+      <SidebarProvider>
+        <Sidebar collapsible="icon" variant="inset">
+          <SidebarHeader>
+            <div className="flex items-center gap-2 px-2 py-1">
+              <div className="flex aspect-square size-7 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground shrink-0">
+                <span className="text-xs font-bold">IG</span>
+              </div>
+              <div className="grid flex-1 text-left text-xs leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate font-semibold text-sidebar-foreground">
+                  Instagram Scraper
+                </span>
+                <span className="truncate text-[10px] text-sidebar-foreground/60">
+                  Job Content Manager
+                </span>
+              </div>
+            </div>
+          </SidebarHeader>
+          <Separator className="bg-sidebar-border" />
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {NAV_ITEMS.map((item) => (
+                    <SidebarMenuItem key={item.path}>
+                      <SidebarMenuButton
+                        onClick={() => navigate(item.path)}
+                        isActive={isActive(item.path)}
+                        tooltip={item.label}
+                        aria-current={isActive(item.path) ? "page" : undefined}
+                      >
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          <SidebarRail />
+        </Sidebar>
+        <SidebarInset>
+          <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4">
+            <SidebarTrigger className="-ml-1" />
+          </header>
+          <div className="flex-1 overflow-auto p-6">{children}</div>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }
