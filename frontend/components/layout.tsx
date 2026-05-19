@@ -42,6 +42,8 @@ export default function Layout({ children }: LayoutProps) {
     return path === "/" ? pathname === "/" : pathname.startsWith(path);
   }
 
+  const currentPage = NAV_ITEMS.find((item) => isActive(item.path));
+
   return (
     <TooltipProvider>
       <SidebarProvider>
@@ -88,6 +90,14 @@ export default function Layout({ children }: LayoutProps) {
         <SidebarInset>
           <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4">
             <SidebarTrigger className="-ml-1" />
+            {currentPage && (
+              <>
+                <Separator orientation="vertical" className="h-4" />
+                <span className="text-sm text-muted-foreground">
+                  {currentPage.label}
+                </span>
+              </>
+            )}
           </header>
           <div className="flex-1 overflow-auto p-6">{children}</div>
         </SidebarInset>

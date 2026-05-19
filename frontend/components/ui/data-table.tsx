@@ -43,7 +43,7 @@ function SortIcon({ sorted }: { sorted: false | "asc" | "desc" }) {
 export function DataTable<TData, TValue>({
   columns,
   data,
-  pageSize = 15,
+  pageSize = 9,
   searchColumn,
   searchPlaceholder = "Search...",
   toolbarLeft,

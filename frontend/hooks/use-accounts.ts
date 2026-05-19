@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "@/components/ui/toast";
 
 export interface Account {
@@ -20,7 +20,6 @@ export function useAccounts() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [filter, setFilter] = useState<FilterType>("all");
-  const [search, setSearch] = useState("");
   const [tick, setTick] = useState(0);
 
   const refetch = useCallback(() => setTick((n) => n + 1), []);
@@ -35,14 +34,6 @@ export function useAccounts() {
       .catch(() => toast.error("Failed to load accounts"))
       .finally(() => setLoading(false));
   }, [filter, tick]);
-
-  const filteredAccounts = useMemo(
-    () =>
-      accounts.filter((a) =>
-        a.username.toLowerCase().includes(search.toLowerCase()),
-      ),
-    [accounts, search],
-  );
 
   async function addAccount(username: string, isExternal: boolean): Promise<boolean> {
     setSubmitting(true);
@@ -70,9 +61,6 @@ export function useAccounts() {
     submitting,
     filter,
     setFilter,
-    search,
-    setSearch,
-    filteredAccounts,
     addAccount,
     refetch,
   };

@@ -3,7 +3,6 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogBody,
   DialogFooter,
   DialogTitle,
   DialogDescription,
@@ -40,11 +39,8 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<ConfirmState>(DEFAULT_STATE);
 
   const confirm = React.useCallback(
-    (options: ConfirmOptions): Promise<boolean> => {
-      return new Promise<boolean>((resolve) => {
-        setState({ open: true, options, resolve });
-      });
-    },
+    (options: ConfirmOptions): Promise<boolean> =>
+      new Promise<boolean>((resolve) => setState({ open: true, options, resolve })),
     [],
   );
 
@@ -60,9 +56,12 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   return (
     <ConfirmContext.Provider value={{ confirm }}>
       {children}
-      <Dialog open={state.open} onOpenChange={(open) => { if (!open) handleClose(false); }}>
-        <DialogContent>
-          <DialogHeader showClose={false}>
+      <Dialog
+        open={state.open}
+        onOpenChange={(open) => { if (!open) handleClose(false); }}
+      >
+        <DialogContent className="sm:max-w-sm" showCloseButton={false}>
+          <DialogHeader>
             <DialogTitle>{state.options.title}</DialogTitle>
             {state.options.description && (
               <DialogDescription>{state.options.description}</DialogDescription>

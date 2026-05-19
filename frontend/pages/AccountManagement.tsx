@@ -1,26 +1,26 @@
-import { useState, useMemo } from "react";
+import { useState, useRef } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Users } from "lucide-react";
+import dayjs from "dayjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogBody,
   DialogFooter,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useAccounts, type Account } from "@/hooks/use-accounts";
+import { cn } from "@/lib/utils";
+
+const FILTER_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "external", label: "External" },
+  { value: "internal", label: "Internal" },
+] as const;
 
 const columns: ColumnDef<Account>[] = [
   {
@@ -78,23 +78,25 @@ const columns: ColumnDef<Account>[] = [
       );
     },
   },
+  {
+    accessorKey: "created_at",
+    header: "Added",
+    cell: ({ row }) => (
+      <span className="text-xs text-muted-foreground">
+        {dayjs(row.getValue("created_at")).format("DD MMM YYYY")}
+      </span>
+    ),
+  },
 ];
 
 export default function AccountManagement() {
-  const {
-    loading,
-    submitting,
-    filter,
-    setFilter,
-    filteredAccounts,
-    addAccount,
-  } = useAccounts();
+  const { accounts, loading, submitting, filter, setFilter, addAccount } =
+    useAccounts();
 
   const [addOpen, setAddOpen] = useState(false);
   const [newUsername, setNewUsername] = useState("");
   const [newIsExternal, setNewIsExternal] = useState(true);
-
-  const tableData = useMemo(() => filteredAccounts, [filteredAccounts]);
+  const usernameInputRef = useRef<HTMLInputElement>(null);
 
   async function handleAdd() {
     const ok = await addAccount(newUsername, newIsExternal);
@@ -113,7 +115,7 @@ export default function AccountManagement() {
             Accounts
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage Instagram accounts
+            Manage Instagram accounts for scraping
           </p>
         </div>
         <Button onClick={() => setAddOpen(true)} size="sm">
@@ -123,41 +125,58 @@ export default function AccountManagement() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16 text-muted-foreground">
+        <div className="flex items-center justify-center py-20 text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
+        </div>
+      ) : accounts.length === 0 && filter === "all" ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+            <Users className="size-6 text-muted-foreground" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">No accounts yet</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Add your first Instagram account to start scraping
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setAddOpen(true)}>
+            <Plus className="size-4" />
+            Add Account
+          </Button>
         </div>
       ) : (
         <DataTable
           columns={columns}
-          data={tableData}
+          data={accounts}
           searchColumn="username"
           searchPlaceholder="Search username..."
           toolbarLeft={
-            <Select
-              value={filter}
-              onValueChange={(v) =>
-                setFilter(v as "all" | "external" | "internal")
-              }
-            >
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="Filter type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="external">External</SelectItem>
-                <SelectItem value="internal">Internal</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-1.5">
+              {FILTER_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setFilter(opt.value)}
+                  className={cn(
+                    "h-8 rounded-full px-3.5 text-xs font-medium transition-colors border",
+                    filter === opt.value
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           }
         />
       )}
 
       <Dialog open={addOpen} onOpenChange={(open) => setAddOpen(open)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Add Instagram Account</DialogTitle>
           </DialogHeader>
-          <DialogBody className="space-y-4">
+          <div className="space-y-4">
             <div className="space-y-1.5">
               <label
                 htmlFor="new-username"
@@ -167,6 +186,8 @@ export default function AccountManagement() {
               </label>
               <Input
                 id="new-username"
+                ref={usernameInputRef}
+                autoFocus
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
                 placeholder="e.g. company_account"
@@ -179,20 +200,28 @@ export default function AccountManagement() {
               <label className="text-xs font-medium text-foreground">
                 Type
               </label>
-              <Select
-                value={newIsExternal ? "external" : "internal"}
-                onValueChange={(v) => setNewIsExternal(v === "external")}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="external">External</SelectItem>
-                  <SelectItem value="internal">Internal</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex gap-1.5">
+                {[
+                  { value: true, label: "External" },
+                  { value: false, label: "Internal" },
+                ].map((opt) => (
+                  <button
+                    key={String(opt.value)}
+                    type="button"
+                    onClick={() => setNewIsExternal(opt.value)}
+                    className={cn(
+                      "h-8 rounded-full px-3.5 text-xs font-medium transition-colors border",
+                      newIsExternal === opt.value
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </DialogBody>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>
               Cancel

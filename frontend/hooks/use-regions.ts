@@ -78,14 +78,71 @@ export function useRegions() {
       .finally(() => setLoading(false));
   }, [tick]);
 
-  function selectRegion(region: Region) {
-    setSelectedRegion(region);
+  function fetchRegionAccounts(regionId: number) {
     setLoadingAccounts(true);
-    fetch(`/api/master/region/${region.id}/accounts`)
+    fetch(`/api/master/region/${regionId}/accounts`)
       .then((r) => r.json())
       .then((d) => setRegionAccounts(d.results ?? []))
       .catch(() => toast.error("Failed to load region accounts"))
       .finally(() => setLoadingAccounts(false));
+  }
+
+  function selectRegion(region: Region) {
+    setSelectedRegion(region);
+    fetchRegionAccounts(region.id);
+  }
+
+  async function addAccountToRegion(regionId: number, accountId: number): Promise<boolean> {
+    try {
+      const r = await fetch(`/api/master/region/${regionId}/accounts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ account_id: accountId }),
+      });
+      if (!r.ok) throw new Error();
+      fetchRegionAccounts(regionId);
+      // Update account_count in regions list optimistically
+      setRegions((prev) =>
+        prev.map((reg) =>
+          reg.id === regionId
+            ? { ...reg, account_count: reg.account_count + 1 }
+            : reg,
+        ),
+      );
+      toast.success("Account assigned to region");
+      return true;
+    } catch {
+      toast.error("Failed to assign account");
+      return false;
+    }
+  }
+
+  async function removeAccountFromRegion(regionId: number, accountId: number): Promise<void> {
+    try {
+      await fetch(`/api/master/region/${regionId}/accounts/${accountId}`, {
+        method: "DELETE",
+      });
+      setRegionAccounts((prev) => prev.filter((a) => a.account_id !== accountId));
+      setRegions((prev) =>
+        prev.map((reg) =>
+          reg.id === regionId
+            ? { ...reg, account_count: Math.max(0, reg.account_count - 1) }
+            : reg,
+        ),
+      );
+      toast.success("Account removed from region");
+    } catch {
+      toast.error("Failed to remove account");
+    }
+  }
+
+  async function updateRegionGroup(regionId: number, groupId: number | null): Promise<boolean> {
+    const region = regions.find((r) => r.id === regionId);
+    if (!region) return false;
+    return saveRegion(
+      { name: region.name, province_id: region.province_id, group_id: groupId, js_loker: region.js_loker },
+      regionId,
+    );
   }
 
   async function saveRegion(data: RegionFormData, editingId?: number): Promise<boolean> {
@@ -97,7 +154,7 @@ export function useRegions() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!r.ok) throw new Error("Failed");
+      if (!r.ok) throw new Error();
       toast.success(editingId ? "Region updated" : "Region created");
       refetch();
       return true;
@@ -120,16 +177,14 @@ export function useRegions() {
 
   async function saveProvince(data: ProvinceFormData, editingId?: number): Promise<boolean> {
     const method = editingId ? "PUT" : "POST";
-    const url = editingId
-      ? `/api/master/province/${editingId}`
-      : "/api/master/province";
+    const url = editingId ? `/api/master/province/${editingId}` : "/api/master/province";
     try {
       const r = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!r.ok) throw new Error("Failed");
+      if (!r.ok) throw new Error();
       toast.success(editingId ? "Province updated" : "Province created");
       refetch();
       return true;
@@ -139,18 +194,26 @@ export function useRegions() {
     }
   }
 
+  async function deleteProvince(id: number): Promise<void> {
+    try {
+      await fetch(`/api/master/province/${id}`, { method: "DELETE" });
+      toast.success("Province deleted");
+      refetch();
+    } catch {
+      toast.error("Failed to delete province");
+    }
+  }
+
   async function saveGroup(data: GroupFormData, editingId?: number): Promise<boolean> {
     const method = editingId ? "PUT" : "POST";
-    const url = editingId
-      ? `/api/master/group/${editingId}`
-      : "/api/master/group";
+    const url = editingId ? `/api/master/group/${editingId}` : "/api/master/group";
     try {
       const r = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!r.ok) throw new Error("Failed");
+      if (!r.ok) throw new Error();
       toast.success(editingId ? "Group updated" : "Group created");
       refetch();
       return true;
@@ -160,17 +223,13 @@ export function useRegions() {
     }
   }
 
-  async function removeAccountFromRegion(accountId: number): Promise<void> {
-    if (!selectedRegion) return;
+  async function deleteGroup(id: number): Promise<void> {
     try {
-      await fetch(
-        `/api/master/region/${selectedRegion.id}/accounts/${accountId}`,
-        { method: "DELETE" },
-      );
-      setRegionAccounts((prev) => prev.filter((a) => a.account_id !== accountId));
-      toast.success("Account removed from region");
+      await fetch(`/api/master/group/${id}`, { method: "DELETE" });
+      toast.success("Group deleted");
+      refetch();
     } catch {
-      toast.error("Failed to remove account");
+      toast.error("Failed to delete group");
     }
   }
 
@@ -183,11 +242,15 @@ export function useRegions() {
     selectRegion,
     regionAccounts,
     loadingAccounts,
+    addAccountToRegion,
+    removeAccountFromRegion,
+    updateRegionGroup,
     saveRegion,
     deleteRegion,
     saveProvince,
+    deleteProvince,
     saveGroup,
-    removeAccountFromRegion,
+    deleteGroup,
     refetch,
   };
 }
