@@ -4,9 +4,10 @@ export const instagramConfig = {
   baseUrl: "https://www.instagram.com",
   timeout: 10000,
   graphqlDocId: "7950326061742207",
-  sessionId: process.env.INSTAGRAM_SESSION_ID,
-  cookie: process.env.INSTAGRAM_COOKIE ?? "",
-  appId: process.env.INSTAGRAM_APP_ID ?? "",
+  // All auth fields are optional — features that need them degrade gracefully
+  sessionId: process.env.INSTAGRAM_SESSION_ID ?? "",
+  cookie:    process.env.INSTAGRAM_COOKIE     ?? "",
+  appId:     process.env.INSTAGRAM_APP_ID     ?? "",
   csrfToken: process.env.INSTAGRAM_CSRF_TOKEN ?? "",
-  proxyUrl: process.env.NGROK_URL ?? "",
+  proxyUrl:  process.env.NGROK_URL            ?? "",
 };

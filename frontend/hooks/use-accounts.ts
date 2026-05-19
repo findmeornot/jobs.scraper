@@ -35,6 +35,26 @@ export function useAccounts() {
       .finally(() => setLoading(false));
   }, [filter, tick]);
 
+  async function syncAccountId(username: string): Promise<boolean> {
+    try {
+      const res = await fetch("/api/instagram/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usernames: [username] }),
+      });
+      if (!res.ok) throw new Error("Request failed");
+      const data = await res.json();
+      const result = data.results?.[0];
+      if (!result?.success) throw new Error(result?.error ?? "Unknown error");
+      toast.success("ID synced", `@${username} → ${result.userId}`);
+      refetch();
+      return true;
+    } catch (err) {
+      toast.error("Sync failed", `Could not resolve ID for @${username}`);
+      return false;
+    }
+  }
+
   async function addAccount(username: string, isExternal: boolean): Promise<boolean> {
     setSubmitting(true);
     try {
@@ -61,6 +81,7 @@ export function useAccounts() {
     submitting,
     filter,
     setFilter,
+    syncAccountId,
     addAccount,
     refetch,
   };

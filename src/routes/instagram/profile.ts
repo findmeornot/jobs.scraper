@@ -1,6 +1,6 @@
 import { okResults, err, serverErr } from "@/utils/response";
 import { getAllAccounts, saveOrUpdateAccount } from "@/services/instagram-account.service";
-import { scrapeProfile } from "@/scraper/index";
+import { resolveInstagramId, syncMissingIds } from "@/services/instagram-id.service";
 import { fetchUserInfo } from "@/scraper/fetch";
 import { instagramConfig } from "@/config/instagram";
 
@@ -36,12 +36,27 @@ export async function profilePost(req: Request): Promise<Response> {
   }
 }
 
+export async function profileSyncIds(): Promise<Response> {
+  // Kick off background sync and return 202 immediately
+  syncMissingIds().catch((err) =>
+    console.error("[profileSyncIds] Background sync error:", err),
+  );
+  return Response.json(
+    { success: true, message: "ID sync started in background" },
+    { status: 202 },
+  );
+}
+
 async function processUsername(username: string) {
   try {
-    const profile = await scrapeProfile(username);
+    const profile = await resolveInstagramId(username);
     const profileId = profile.id;
 
-    if (instagramConfig.sessionId && profileId) {
+    const followers = profile.followers;
+    const following = profile.following;
+
+    // Optionally enrich with session-based follower count
+    if (instagramConfig.sessionId && instagramConfig.sessionId.length > 0 && profileId && followers === 0) {
       try {
         const info = await fetchUserInfo(profileId, instagramConfig.sessionId);
         await saveOrUpdateAccount({
@@ -62,8 +77,8 @@ async function processUsername(username: string) {
       }
     }
 
-    await saveOrUpdateAccount({ instagram_id: profileId, username, followers: 0, following: 0 });
-    return { success: true, userId: profileId, username };
+    await saveOrUpdateAccount({ instagram_id: profileId, username, followers, following });
+    return { success: true, userId: profileId, username, followers: String(followers), following: String(following) };
   } catch (error) {
     return {
       success: false,

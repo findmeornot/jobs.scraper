@@ -66,10 +66,14 @@ export async function fetchInstagramPosts(
 ): Promise<ScrapedPostsResponse> {
   const sessionId = instagramConfig.sessionId;
   if (!sessionId) {
-    throw new Error("INSTAGRAM_SESSION_ID is required");
+    throw new Error(
+      "INSTAGRAM_SESSION_ID is not configured — post scraping is unavailable without a session.",
+    );
   }
   if (!instagramConfig.proxyUrl) {
-    throw new Error("NGROK_URL is required for proxied Instagram API calls");
+    throw new Error(
+      "PROXY_URL is not configured — post scraping is unavailable without a proxy.",
+    );
   }
 
   await randomDelay();
