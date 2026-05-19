@@ -1,0 +1,116 @@
+[
+  {
+    "id": 1,
+    "name": "Artist/Stylist",
+    "created_at": "2025-01-17 11:41:22.248138",
+    "updated_at": "2025-01-17 11:41:22.248138"
+  },
+  {
+    "id": 2,
+    "name": "Pelayanan",
+    "created_at": "2025-01-17 11:41:22.262394",
+    "updated_at": "2025-01-17 11:41:22.262394"
+  },
+  {
+    "id": 3,
+    "name": "BUMN ( Badan Usaha Milik Negara )",
+    "created_at": "2025-01-17 11:41:22.268969",
+    "updated_at": "2025-01-17 11:41:22.268969"
+  },
+  {
+    "id": 4,
+    "name": "Teknik",
+    "created_at": "2025-01-17 11:41:22.276300",
+    "updated_at": "2025-01-17 11:41:22.276300"
+  },
+  {
+    "id": 5,
+    "name": "Lainnya",
+    "created_at": "2025-01-17 11:41:22.282492",
+    "updated_at": "2025-01-17 11:41:22.282492"
+  },
+  {
+    "id": 6,
+    "name": "Seni / Media / Komunikasi",
+    "created_at": "2025-01-17 11:41:22.288939",
+    "updated_at": "2025-01-17 11:41:22.288939"
+  },
+  {
+    "id": 7,
+    "name": "Pendidikan / Pelatihan",
+    "created_at": "2025-01-17 11:41:22.295608",
+    "updated_at": "2025-01-17 11:41:22.295608"
+  },
+  {
+    "id": 117,
+    "name": "Manufaktur",
+    "created_at": "2025-01-17 11:41:22.301210",
+    "updated_at": "2025-01-17 11:41:22.301210"
+  },
+  {
+    "id": 118,
+    "name": "Akuntansi / Keuangan",
+    "created_at": "2025-01-17 11:41:22.308663",
+    "updated_at": "2025-01-17 11:41:22.308663"
+  },
+  {
+    "id": 119,
+    "name": "Hotel / Restoran",
+    "created_at": "2025-01-17 11:41:22.313525",
+    "updated_at": "2025-01-17 11:41:22.313525"
+  },
+  {
+    "id": 120,
+    "name": "Hospitality/Hotel",
+    "created_at": "2025-01-17 11:41:22.318394",
+    "updated_at": "2025-01-17 11:41:22.318394"
+  },
+  {
+    "id": 121,
+    "name": "Information Technology",
+    "created_at": "2025-01-17 11:41:22.325430",
+    "updated_at": "2025-01-17 11:41:22.325430"
+  },
+  {
+    "id": 122,
+    "name": "Pengacara / Asisten Legal",
+    "created_at": "2025-01-17 11:41:22.330012",
+    "updated_at": "2025-01-17 11:41:22.330012"
+  },
+  {
+    "id": 123,
+    "name": "Logistic",
+    "created_at": "2025-01-17 11:41:22.334849",
+    "updated_at": "2025-01-17 11:41:22.334849"
+  },
+  {
+    "id": 124,
+    "name": "Penjualan / Pemasaran",
+    "created_at": "2025-01-17 11:41:22.339881",
+    "updated_at": "2025-01-17 11:41:22.339881"
+  },
+  {
+    "id": 125,
+    "name": "Mechanical Engineering",
+    "created_at": "2025-01-17 11:41:22.345011",
+    "updated_at": "2025-01-17 11:41:22.345011"
+  },
+  {
+    "id": 126,
+    "name": "Layanan Kesehatan",
+    "created_at": "2025-01-17 11:41:22.349867",
+    "updated_at": "2025-01-17 11:41:22.349867"
+  },
+  {
+    "id": 127,
+    "name": "Staf / Administrasi Umum",
+    "created_at": "2025-01-17 11:41:22.354556",
+    "updated_at": "2025-01-17 11:41:22.354556"
+  },
+  {
+    "id": 128,
+    "name": "Website Development",
+    "created_at": "2025-01-17 11:41:22.360026",
+    "updated_at": "2025-01-17 11:41:22.360026"
+  }
+]

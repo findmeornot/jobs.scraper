@@ -1,0 +1,247 @@
+[
+  {
+    "id": 1,
+    "name": "Indonesia",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 11,
+    "name": "Aceh",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 12,
+    "name": "Sumatera Utara",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 13,
+    "name": "Sumatera Barat",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 14,
+    "name": "Riau",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 15,
+    "name": "Jambi",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 16,
+    "name": "Sumatera Selatan",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 17,
+    "name": "Bengkulu",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 18,
+    "name": "Lampung",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 19,
+    "name": "Kepulauan Bangka Belitung",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 21,
+    "name": "Kepulauan Riau",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 31,
+    "name": "DKI Jakarta",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 32,
+    "name": "Jawa Barat",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 33,
+    "name": "Jawa Tengah",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 34,
+    "name": "DI Yogyakarta",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 35,
+    "name": "Jawa Timur",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 36,
+    "name": "Banten",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 51,
+    "name": "Bali",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 52,
+    "name": "Nusa Tenggara Barat",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 53,
+    "name": "Nusa Tenggara Timur",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 61,
+    "name": "Kalimantan Barat",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 62,
+    "name": "Kalimantan Tengah",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 63,
+    "name": "Kalimantan Selatan",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 64,
+    "name": "Kalimantan Timur",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 65,
+    "name": "Kalimantan Utara",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 71,
+    "name": "Sulawesi Utara",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 72,
+    "name": "Sulawesi Tengah",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 73,
+    "name": "Sulawesi Selatan",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 74,
+    "name": "Sulawesi Tenggara",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 75,
+    "name": "Gorontalo",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 76,
+    "name": "Sulawesi Barat",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 81,
+    "name": "Maluku",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 82,
+    "name": "Maluku Utara",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 91,
+    "name": "Papua Barat",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  },
+  {
+    "id": 92,
+    "name": "Papua",
+    "is_active": 1,
+    "created_at": "2025-01-23 10:24:16.507329",
+    "updated_at": "2025-01-23 10:24:16.507329"
+  }
+]

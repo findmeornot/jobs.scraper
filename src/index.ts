@@ -1,41 +1,30 @@
-import { serve } from "bun";
-import index from "./index.html";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import { db } from "@/db/index";
+import { startServer } from "@/server";
+import { initCrons } from "@/crons/index";
 
-const server = serve({
-  routes: {
-    // Serve index.html for all unmatched routes.
-    "/*": index,
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault("Asia/Jakarta");
+process.env.TZ = "Asia/Jakarta";
 
-    "/api/hello": {
-      async GET(req) {
-        return Response.json({
-          message: "Hello, world!",
-          method: "GET",
-        });
-      },
-      async PUT(req) {
-        return Response.json({
-          message: "Hello, world!",
-          method: "PUT",
-        });
-      },
-    },
+async function bootstrap(): Promise<void> {
+  try {
+    // Verify database connectivity with a lightweight query
+    await db`SELECT 1`;
+    console.log("✅ Database connected");
 
-    "/api/hello/:name": async req => {
-      const name = req.params.name;
-      return Response.json({
-        message: `Hello, ${name}!`,
-      });
-    },
-  },
+    startServer();
+    initCrons();
 
-  development: process.env.NODE_ENV !== "production" && {
-    // Enable browser hot reloading in development
-    hmr: true,
+    console.log(`🕒 Timezone: ${process.env.TZ}`);
+    console.log(`📅 ${dayjs().format("YYYY-MM-DD HH:mm:ss Z")}`);
+  } catch (error) {
+    console.error("Bootstrap failed:", error);
+    process.exit(1);
+  }
+}
 
-    // Echo console logs from the browser to the server
-    console: true,
-  },
-});
-
-console.log(`🚀 Server running at ${server.url}`);
+bootstrap();

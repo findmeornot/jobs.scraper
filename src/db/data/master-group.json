@@ -1,0 +1,1311 @@
+[
+  {
+    "id": 1,
+    "name": "Papua",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 2,
+    "name": "Jayapura",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 3,
+    "name": "Sorong",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 4,
+    "name": "Manokwari",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 5,
+    "name": "Maluku",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 6,
+    "name": "Ambon",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 7,
+    "name": "Ternate",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 8,
+    "name": "Kalimantan Barat",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 9,
+    "name": "Singkawang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 10,
+    "name": "Sekadau",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 11,
+    "name": "Putussibau",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 12,
+    "name": "Sambas",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 13,
+    "name": "Mempawah",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 14,
+    "name": "Melawipinoh",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 15,
+    "name": "Kayongutara",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:51:43.832597"
+  },
+  {
+    "id": 16,
+    "name": "Sanggau",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 17,
+    "name": "Ketapang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 18,
+    "name": "Landak",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 19,
+    "name": "Sintang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 20,
+    "name": "Pontianak",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 21,
+    "name": "Bengkayang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 22,
+    "name": "Kalimantan Tengah",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 23,
+    "name": "Palangkaraya",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 24,
+    "name": "Kapuas",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:52:49.441186"
+  },
+  {
+    "id": 25,
+    "name": "Pangkalan Bun",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:52:54.307147"
+  },
+  {
+    "id": 26,
+    "name": "Sampit",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 27,
+    "name": "Kalimantan Utara",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:53:02.373349"
+  },
+  {
+    "id": 28,
+    "name": "Tarakan",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 29,
+    "name": "Kalimantan Timur",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 30,
+    "name": "Balikpapan",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 31,
+    "name": "Samarinda",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 32,
+    "name": "Bontang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 33,
+    "name": "Berau",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 34,
+    "name": "Sangatta",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 35,
+    "name": "Paser",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-08 00:00:16.260120"
+  },
+  {
+    "id": 36,
+    "name": "Mahakam Ulu",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:53:09.289956"
+  },
+  {
+    "id": 37,
+    "name": "Kalimantan Selatan",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 38,
+    "name": "Banjarbaru",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 39,
+    "name": "Banjarmasin",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 40,
+    "name": "Barabai",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 41,
+    "name": "Kotabaru",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 42,
+    "name": "Amuntai",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 43,
+    "name": "Tabalong",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 44,
+    "name": "Tanah bumbu",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 45,
+    "name": "Tanah Laut",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 46,
+    "name": "Balangan",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 47,
+    "name": "Banyuwangi",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 48,
+    "name": "Bojonegoro",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 49,
+    "name": "Gresik",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 50,
+    "name": "Jember",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 51,
+    "name": "Jombang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 52,
+    "name": "Kediri",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 53,
+    "name": "Lamongan",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 54,
+    "name": "Lumajang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:53:20.308919"
+  },
+  {
+    "id": 55,
+    "name": "Madiun",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 56,
+    "name": "Mojokerto",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 57,
+    "name": "Nganjuk",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 58,
+    "name": "Pasuruan",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 59,
+    "name": "ponorogo",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 60,
+    "name": "Probolinggo",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 61,
+    "name": "Sidoarjo",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 62,
+    "name": "Tuban",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 63,
+    "name": "Madura",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 64,
+    "name": "Magetan Ngawi",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 65,
+    "name": "Situ Bondowoso",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:59:51.247768"
+  },
+  {
+    "id": 66,
+    "name": "Pacitan Trenggalek",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:53:28.645098"
+  },
+  {
+    "id": 67,
+    "name": "Batu Malang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:53:34.567388"
+  },
+  {
+    "id": 68,
+    "name": "Blitar tulungagung",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 69,
+    "name": "Surabaya",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 70,
+    "name": "Jakarta",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 71,
+    "name": "Bogor",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 72,
+    "name": "Bandung",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 73,
+    "name": "Bekasi",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:53:40.916371"
+  },
+  {
+    "id": 74,
+    "name": "Depok",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 75,
+    "name": "Garut",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 76,
+    "name": "Sukabumi",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 77,
+    "name": "Karawang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 78,
+    "name": "Cianjur",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 79,
+    "name": "Cirebon",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 80,
+    "name": "Sumedang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 81,
+    "name": "Subang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 82,
+    "name": "Purwakarta",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 83,
+    "name": "Majalengka",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 84,
+    "name": "Ciamis",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 85,
+    "name": "Indramayu",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 86,
+    "name": "Kuningan",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 87,
+    "name": "Cimahi",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 88,
+    "name": "Tasikmalaya",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 89,
+    "name": "Tangerang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 90,
+    "name": "Cilegon",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 91,
+    "name": "Serang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 92,
+    "name": "Banten",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 93,
+    "name": "Pangandaran",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 94,
+    "name": "Sumbar",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 95,
+    "name": "Padang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 96,
+    "name": "Bukittinggi",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 97,
+    "name": "Dharmasolok",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 98,
+    "name": "Payakumbuh",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 99,
+    "name": "Sumatera Selatan",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:53:52.541929"
+  },
+  {
+    "id": 100,
+    "name": "Palembang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 101,
+    "name": "Muara Enim Lahat",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:53:58.221588"
+  },
+  {
+    "id": 102,
+    "name": "Lampung",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 103,
+    "name": "Bandar Lampung",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 104,
+    "name": "Metro lampung",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 105,
+    "name": "Bengkulu",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 106,
+    "name": "Bungo Bangko",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:54:27.725113"
+  },
+  {
+    "id": 107,
+    "name": "Jambi",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 108,
+    "name": "Sumatera Utara",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:54:33.877994"
+  },
+  {
+    "id": 109,
+    "name": "Medan",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 110,
+    "name": "Labuhan Batu",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:54:38.426596"
+  },
+  {
+    "id": 111,
+    "name": "Aceh",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 112,
+    "name": "Banda Aceh",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:54:42.868021"
+  },
+  {
+    "id": 113,
+    "name": "Bali",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 114,
+    "name": "Badung",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 115,
+    "name": "Denpasar",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 116,
+    "name": "Buleleng",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 117,
+    "name": "Gianyar",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 118,
+    "name": "Tabanan",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 119,
+    "name": "Karangasem",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 120,
+    "name": "Jembrana",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 121,
+    "name": "Riau",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 122,
+    "name": "Kepri",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 123,
+    "name": "Pekan Baru",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 124,
+    "name": "Dumai",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 125,
+    "name": "Batam",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 126,
+    "name": "Sulawesi Selatan",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 127,
+    "name": "Makassar",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 128,
+    "name": "Luwuraya",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 129,
+    "name": "Munabau",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 130,
+    "name": "Parepare",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 131,
+    "name": "Wajo Bone",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:57:01.443060"
+  },
+  {
+    "id": 132,
+    "name": "Sulawesi Tengah",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:55:06.382056"
+  },
+  {
+    "id": 133,
+    "name": "Palu Luwuk",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:55:11.672420"
+  },
+  {
+    "id": 134,
+    "name": "Mamuju",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 135,
+    "name": "Sulawesi Tenggara",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 136,
+    "name": "Kendari",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 137,
+    "name": "Konawe",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 138,
+    "name": "Sulawesi Utara",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:55:20.838923"
+  },
+  {
+    "id": 139,
+    "name": "Gorontalo",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:55:25.495101"
+  },
+  {
+    "id": 140,
+    "name": "Manado",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 141,
+    "name": "Kupang NTT",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:55:58.477958"
+  },
+  {
+    "id": 142,
+    "name": "Nusa Tenggara Timur",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:55:31.429631"
+  },
+  {
+    "id": 143,
+    "name": "Mataram",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 144,
+    "name": "Lombok Tengah",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:55:37.213651"
+  },
+  {
+    "id": 145,
+    "name": "Lombok Timur",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 146,
+    "name": "Sumbawa",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 147,
+    "name": "Bima Dompu",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:56:04.428452"
+  },
+  {
+    "id": 148,
+    "name": "Kota Bima",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:56:08.678838"
+  },
+  {
+    "id": 149,
+    "name": "Lombok Utara",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:56:14.093381"
+  },
+  {
+    "id": 150,
+    "name": "Klaten",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 151,
+    "name": "Sragen",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 152,
+    "name": "Purwodadi Grobogan",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:56:21.179254"
+  },
+  {
+    "id": 153,
+    "name": "Pati Rembang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:56:26.594611"
+  },
+  {
+    "id": 154,
+    "name": "Demak Semarang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:56:30.556507"
+  },
+  {
+    "id": 155,
+    "name": "Jepara",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 156,
+    "name": "Kendal",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 157,
+    "name": "Batang pekalongan",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 158,
+    "name": "Boyolali",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 159,
+    "name": "Ungaran Semarang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 160,
+    "name": "Cilacap",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 161,
+    "name": "Purwokerto",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 162,
+    "name": "Banjarnegara",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:56:37.552403"
+  },
+  {
+    "id": 163,
+    "name": "Purworejo",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 164,
+    "name": "Magelang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 165,
+    "name": "Sukoharjo",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 166,
+    "name": "Karanganyar",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 167,
+    "name": "Kudus",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 168,
+    "name": "Pemalang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 169,
+    "name": "Wonosobo",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 170,
+    "name": "Brebes",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 171,
+    "name": "Purbalingga",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 172,
+    "name": "Wonogiri",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 173,
+    "name": "Salatiga",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 174,
+    "name": "Semarang",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 175,
+    "name": "Solo",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 176,
+    "name": "Kebumen",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 177,
+    "name": "Tegal",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 178,
+    "name": "Blora",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 179,
+    "name": "Jogja",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 180,
+    "name": "Sleman",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 181,
+    "name": "Kulonprogo",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 183,
+    "name": "Indonesia",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 184,
+    "name": "Jawa Barat",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 185,
+    "name": "Jawa Tengah",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 186,
+    "name": "Jawa Timur",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  },
+  {
+    "id": 187,
+    "name": "Nusa Tenggara Barat",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-07 23:56:49.910032"
+  },
+  {
+    "id": 188,
+    "name": "Sulawesi Barat",
+    "is_active": 1,
+    "created_at": "2025-02-04 19:25:41.000000",
+    "updated_at": "2025-02-04 19:25:41.000000"
+  }
+]
