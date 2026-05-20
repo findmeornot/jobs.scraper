@@ -69,6 +69,15 @@ export async function insertLog(entry: {
   };
 }
 
+export async function markStuckSessionsFailed(): Promise<number> {
+  const result = await db`
+    UPDATE scrape_session
+    SET status = 'failed', finished_at = CURRENT_TIMESTAMP(3)
+    WHERE status IN ('running', 'paused') AND finished_at IS NULL
+  `;
+  return Number((result as any).affectedRows ?? 0);
+}
+
 export async function findRecentSessions(limit = 50): Promise<ScrapeSession[]> {
   return db<ScrapeSession[]>`
     SELECT * FROM scrape_session

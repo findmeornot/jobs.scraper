@@ -4,6 +4,7 @@ import timezone from "dayjs/plugin/timezone";
 import { db } from "@/db/index";
 import { startServer } from "@/server";
 import { initCrons } from "@/crons/index";
+import { markStuckSessionsFailed } from "@/repositories/scrape-log.repo";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -15,6 +16,9 @@ async function bootstrap(): Promise<void> {
     // Verify database connectivity with a lightweight query
     await db`SELECT 1`;
     console.log("✅ Database connected");
+
+    const stuck = await markStuckSessionsFailed();
+    if (stuck > 0) console.log(`⚠️  Marked ${stuck} stuck session(s) as failed`);
 
     startServer();
     initCrons();
