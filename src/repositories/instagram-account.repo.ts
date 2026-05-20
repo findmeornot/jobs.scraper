@@ -143,6 +143,7 @@ export async function createManualAccount(data: {
 }
 
 export async function deleteAccount(id: number): Promise<void> {
+  await db`DELETE FROM region_account WHERE account_id = ${id}`;
   await db`DELETE FROM instagram_account WHERE id = ${id}`;
 }
 
