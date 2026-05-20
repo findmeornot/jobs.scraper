@@ -65,14 +65,9 @@ export async function fetchInstagramPosts(
   cursor: string | null = null,
 ): Promise<ScrapedPostsResponse> {
   const sessionId = instagramConfig.sessionId;
-  if (!sessionId) {
+  if (!instagramConfig.proxyUrl || !instagramConfig.proxyApiKey) {
     throw new Error(
-      "INSTAGRAM_SESSION_ID is not configured — post scraping is unavailable without a session.",
-    );
-  }
-  if (!instagramConfig.proxyUrl) {
-    throw new Error(
-      "PROXY_URL is not configured — post scraping is unavailable without a proxy.",
+      "PROXY_URL and PROXY_API_KEY must be configured for post scraping.",
     );
   }
 
@@ -88,7 +83,10 @@ export async function fetchInstagramPosts(
 
   const response = await fetch(`${instagramConfig.proxyUrl}/proxy`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": instagramConfig.proxyApiKey,
+    },
     body: JSON.stringify({
       url: targetUrl,
       method: "GET",

@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import { scrapePosts } from "@/scraper/index";
-import { getAllAccounts } from "@/services/instagram-account.service";
+import { getAllAccounts, removeAccount } from "@/services/instagram-account.service";
 import { saveInstagramContent } from "@/services/instagram-content.service";
 import { subtractDays, now } from "@/utils/date";
 
@@ -123,7 +123,15 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
 
         console.log(`@${account.username}: ${posts.first} posts scraped`);
       } catch (err) {
-        console.error(`Error scraping @${account.username}:`, err);
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("User not found or private")) {
+          console.warn(`@${account.username}: not found or private — deleting account`);
+          await removeAccount(account.id).catch((e) =>
+            console.error(`Failed to delete @${account.username}:`, e),
+          );
+        } else {
+          console.error(`Error scraping @${account.username}:`, err);
+        }
       }
     }
 

@@ -9,5 +9,6 @@ export const instagramConfig = {
   cookie:    process.env.INSTAGRAM_COOKIE     ?? "",
   appId:     process.env.INSTAGRAM_APP_ID     ?? "",
   csrfToken: process.env.INSTAGRAM_CSRF_TOKEN ?? "",
-  proxyUrl:  process.env.NGROK_URL            ?? "",
+  proxyUrl:  process.env.PROXY_URL             ?? "",
+  proxyApiKey: process.env.PROXY_API_KEY       ?? "",
 };

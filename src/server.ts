@@ -1,5 +1,5 @@
 import { withCors } from "@/routes/cors";
-import { profileGet, profilePost, profileSyncIds } from "@/routes/instagram/profile";
+import { profileGet, profilePost, profileSyncIds, profilePut, profileDelete, profileAccountRegions } from "@/routes/instagram/profile";
 import {
   contentGet,
   contentPost,
@@ -63,6 +63,13 @@ export function startServer(): void {
       },
       "/api/instagram/profile/sync-ids": {
         POST: c(profileSyncIds),
+      },
+      "/api/instagram/profile/:id": {
+        PUT: c(profilePut as any),
+        DELETE: c(profileDelete as any),
+      },
+      "/api/instagram/profile/:id/regions": {
+        GET: c(profileAccountRegions as any),
       },
       "/api/instagram/content": {
         GET: c(contentGet),

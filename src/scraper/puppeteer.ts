@@ -3,6 +3,7 @@ import { instagramConfig } from "@/config/instagram";
 import { urlToBase64 } from "@/utils/image";
 import { fromUnix } from "@/utils/date";
 import type { ScrapedProfile, ScrapedPost, ScrapedPostsResponse } from "./types";
+import { extractCountsFromHtml } from "@/services/instagram-id.service";
 
 const LAUNCH_OPTIONS: PuppeteerLaunchOptions = {
   headless: true,
@@ -24,13 +25,17 @@ export async function puppeteerProfileId(username: string): Promise<ScrapedProfi
   try {
     const page = await browser.newPage();
     await page.setUserAgent(instagramConfig.userAgent);
-    await page.goto(`${instagramConfig.baseUrl}/${username}/`);
+    await page.goto(`${instagramConfig.baseUrl}/${username}/`, { waitUntil: "networkidle2", timeout: 30_000 });
 
     const content = await page.content();
-    const match = content.match(/"profilePage_(\d+)"/);
 
-    if (!match?.[1]) throw new Error(`Could not find user ID for @${username}`);
-    return { id: match[1], followers: "0", following: "0" };
+    const idMatch = content.match(/"profilePage_(\d+)"/) ??
+                    content.match(/"profile_id":"(\d+)"/) ??
+                    content.match(/"user_id":"(\d+)"/);
+    if (!idMatch?.[1]) throw new Error(`Could not find user ID for @${username}`);
+
+    const { followers, following } = extractCountsFromHtml(content);
+    return { id: idMatch[1], followers: String(followers), following: String(following) };
   } finally {
     await browser.close();
   }

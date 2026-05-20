@@ -4,6 +4,8 @@ import {
   upsertAccount,
   updateInstagramId,
   findAccountsMissingInstagramId,
+  updateAccount,
+  deleteAccount as deleteAccountRepo,
 } from "@/repositories/instagram-account.repo";
 import type { InstagramAccount } from "@/types/index";
 
@@ -27,6 +29,17 @@ export async function saveOrUpdateAccount(data: {
   following: number;
 }): Promise<InstagramAccount> {
   return upsertAccount(data);
+}
+
+export async function editAccount(
+  id: number,
+  data: { username?: string; is_active?: boolean; is_external?: boolean },
+): Promise<void> {
+  await updateAccount(id, data);
+}
+
+export async function removeAccount(id: number): Promise<void> {
+  await deleteAccountRepo(id);
 }
 
 export async function syncMissingInstagramIds(

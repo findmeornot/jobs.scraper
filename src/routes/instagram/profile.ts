@@ -1,8 +1,9 @@
-import { okResults, err, serverErr } from "@/utils/response";
-import { getAllAccounts, saveOrUpdateAccount } from "@/services/instagram-account.service";
+import { ok, okResults, err, serverErr } from "@/utils/response";
+import { getAllAccounts, saveOrUpdateAccount, editAccount, removeAccount } from "@/services/instagram-account.service";
 import { resolveInstagramId, syncMissingIds } from "@/services/instagram-id.service";
 import { fetchUserInfo } from "@/scraper/fetch";
 import { instagramConfig } from "@/config/instagram";
+import { findRegionAccountsByAccountId } from "@/repositories/region-account.repo";
 
 export async function profileGet(req: Request): Promise<Response> {
   try {
@@ -45,6 +46,47 @@ export async function profileSyncIds(): Promise<Response> {
     { success: true, message: "ID sync started in background" },
     { status: 202 },
   );
+}
+
+export async function profilePut(req: Request & { params: { id: string } }): Promise<Response> {
+  try {
+    const id = Number((req as any).params?.id);
+    if (!id) return err("id is required");
+    const body = (await req.json().catch(() => ({}))) as {
+      username?: string;
+      is_active?: boolean;
+      is_external?: boolean;
+    };
+    await editAccount(id, body);
+    return ok({ updated: true });
+  } catch (error) {
+    console.error("profilePut error:", error);
+    return serverErr("Failed to update account");
+  }
+}
+
+export async function profileDelete(req: Request & { params: { id: string } }): Promise<Response> {
+  try {
+    const id = Number((req as any).params?.id);
+    if (!id) return err("id is required");
+    await removeAccount(id);
+    return ok({ deleted: true });
+  } catch (error) {
+    console.error("profileDelete error:", error);
+    return serverErr("Failed to delete account");
+  }
+}
+
+export async function profileAccountRegions(req: Request & { params: { id: string } }): Promise<Response> {
+  try {
+    const id = Number((req as any).params?.id);
+    if (!id) return err("id is required");
+    const regions = await findRegionAccountsByAccountId(id);
+    return okResults(regions);
+  } catch (error) {
+    console.error("profileAccountRegions error:", error);
+    return serverErr("Failed to fetch account regions");
+  }
 }
 
 async function processUsername(username: string) {

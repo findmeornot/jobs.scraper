@@ -24,6 +24,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
+const PAGE_SIZE_OPTIONS = [9, 18, 32, 64, "all"] as const;
+type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number];
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -52,6 +55,7 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [pageSizeOpt, setPageSizeOpt] = React.useState<PageSizeOption>(pageSize as PageSizeOption);
 
   const table = useReactTable({
     data,
@@ -67,36 +71,54 @@ export function DataTable<TData, TValue>({
     initialState: { pagination: { pageSize } },
   });
 
-  const hasToolbar =
-    searchColumn || toolbarLeft || toolbarRight;
+  function handlePageSizeChange(opt: PageSizeOption) {
+    setPageSizeOpt(opt);
+    table.setPageIndex(0);
+    table.setPageSize(opt === "all" ? 99999 : opt);
+  }
 
   return (
     <div className="space-y-3">
-      {hasToolbar && (
-        <div className="flex items-center gap-2">
-          <div className="flex flex-1 items-center gap-2">
-            {searchColumn && (
-              <div className="relative max-w-xs flex-1">
-                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder={searchPlaceholder}
-                  value={
-                    (table.getColumn(searchColumn)?.getFilterValue() as string) ?? ""
-                  }
-                  onChange={(e) =>
-                    table.getColumn(searchColumn)?.setFilterValue(e.target.value)
-                  }
-                  className="pl-8"
-                />
-              </div>
-            )}
-            {toolbarLeft}
-          </div>
-          {toolbarRight && (
-            <div className="flex items-center gap-2">{toolbarRight}</div>
+      <div className="flex items-center gap-2">
+        <div className="flex flex-1 items-center gap-2">
+          {searchColumn && (
+            <div className="relative max-w-xs flex-1">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={searchPlaceholder}
+                value={
+                  (table.getColumn(searchColumn)?.getFilterValue() as string) ?? ""
+                }
+                onChange={(e) =>
+                  table.getColumn(searchColumn)?.setFilterValue(e.target.value)
+                }
+                className="pl-8"
+              />
+            </div>
           )}
+          {toolbarLeft}
         </div>
-      )}
+        <div className="flex items-center gap-1.5">
+          {toolbarRight}
+          <div className="flex gap-1">
+            {PAGE_SIZE_OPTIONS.map((opt) => (
+              <button
+                key={String(opt)}
+                type="button"
+                onClick={() => handlePageSizeChange(opt)}
+                className={cn(
+                  "h-8 min-w-8 rounded px-2 text-xs font-medium transition-colors border",
+                  pageSizeOpt === opt
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground",
+                )}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       <div className="rounded-xl border border-border overflow-hidden">
         <Table>

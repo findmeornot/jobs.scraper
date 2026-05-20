@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Map } from "lucide-react";
+import { LayoutDashboard, Users, Map, Pickaxe } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -50,9 +50,7 @@ export default function Layout({ children }: LayoutProps) {
         <Sidebar collapsible="icon" variant="inset">
           <SidebarHeader>
             <div className="flex items-center gap-2 px-2 py-1">
-              <div className="flex aspect-square size-7 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground shrink-0">
-                <span className="text-xs font-bold">IG</span>
-              </div>
+              <Pickaxe className="shrink-0"/>
               <div className="grid flex-1 text-left text-xs leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-semibold text-sidebar-foreground">
                   Instagram Scraper

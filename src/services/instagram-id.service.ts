@@ -1,10 +1,43 @@
 import { instagramConfig } from "@/config/instagram";
 import { puppeteerProfileId } from "@/scraper/puppeteer";
-import { updateInstagramId, findAccountsMissingInstagramId } from "@/repositories/instagram-account.repo";
+import { findAllAccounts, upsertAccount, deleteAccount } from "@/repositories/instagram-account.repo";
 
 const WEB_UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 const IG_APP_ID = "936619743392459";
+
+function parseCount(raw: string): number {
+  const s = raw.replace(/,/g, "").trim();
+  if (/k$/i.test(s)) return Math.round(parseFloat(s) * 1_000);
+  if (/m$/i.test(s)) return Math.round(parseFloat(s) * 1_000_000);
+  return parseInt(s, 10) || 0;
+}
+
+export function extractCountsFromHtml(html: string): { followers: number; following: number } {
+  // Primary: og:description — "51K Followers, 384 Following, 2,858 Posts"
+  const desc =
+    html.match(/property="og:description"[^>]*content="([^"]+)"/i)?.[1] ??
+    html.match(/content="([^"]+)"[^>]*property="og:description"/i)?.[1];
+  if (desc) {
+    const fm  = desc.match(/([\d.,KMkm]+)\s*Followers/i);
+    const fwm = desc.match(/([\d.,KMkm]+)\s*Following/i);
+    const followers = fm  ? parseCount(fm[1])  : 0;
+    const following = fwm ? parseCount(fwm[1]) : 0;
+    if (followers > 0 || following > 0) return { followers, following };
+  }
+  // Fallback: exact counts in embedded JSON
+  const followers = Number(
+    html.match(/"follower_count":(\d+)/)?.[1] ??
+    html.match(/"edge_followed_by":\{"count":(\d+)\}/)?.[1] ??
+    0,
+  );
+  const following = Number(
+    html.match(/"following_count":(\d+)/)?.[1] ??
+    html.match(/"edge_follow":\{"count":(\d+)\}/)?.[1] ??
+    0,
+  );
+  return { followers, following };
+}
 
 interface ResolvedId {
   id: string;
@@ -37,8 +70,8 @@ async function resolveViaWebApi(username: string): Promise<ResolvedId> {
 
   return {
     id: String(user.id),
-    followers: Number(user.edge_followed_by?.count ?? 0),
-    following: Number(user.edge_follow?.count ?? 0),
+    followers: Number(user.follower_count ?? user.edge_followed_by?.count ?? 0),
+    following: Number(user.following_count ?? user.edge_follow?.count ?? 0),
   };
 }
 
@@ -53,7 +86,7 @@ async function resolveViaHtmlParse(username: string): Promise<ResolvedId> {
 
   const html = await res.text();
 
-  const patterns = [
+  const idPatterns = [
     /"profilePage_(\d+)"/,
     /"profile_id":"(\d+)"/,
     /"user_id":"(\d+)"/,
@@ -61,18 +94,26 @@ async function resolveViaHtmlParse(username: string): Promise<ResolvedId> {
     /"owner":\{"id":"(\d+)"/,
   ];
 
-  for (const pattern of patterns) {
+  let id: string | null = null;
+  for (const pattern of idPatterns) {
     const match = html.match(pattern);
-    if (match?.[1]) return { id: match[1], followers: 0, following: 0 };
+    if (match?.[1]) { id = match[1]; break; }
   }
 
-  throw new Error(`No ID pattern matched in HTML for @${username}`);
+  if (!id) throw new Error(`No ID pattern matched in HTML for @${username}`);
+
+  const { followers, following } = extractCountsFromHtml(html);
+  return { id, followers, following };
 }
 
 /** Strategy 3 — Puppeteer (slow, last resort) */
 async function resolveViaPuppeteer(username: string): Promise<ResolvedId> {
   const profile = await puppeteerProfileId(username);
-  return { id: profile.id, followers: 0, following: 0 };
+  return {
+    id: profile.id,
+    followers: Number(profile.followers) || 0,
+    following: Number(profile.following) || 0,
+  };
 }
 
 /**
@@ -110,31 +151,37 @@ export async function resolveInstagramId(username: string): Promise<ResolvedId> 
 }
 
 /**
- * Syncs Instagram IDs for all accounts that are missing one.
- * Runs sequentially with delays to avoid rate-limiting.
+ * Syncs Instagram IDs for ALL accounts.
+ * If an account's ID cannot be resolved by any strategy, the account is deleted.
  */
-export async function syncMissingIds(): Promise<{ processed: number; failed: string[] }> {
-  const accounts = await findAccountsMissingInstagramId();
+export async function syncMissingIds(): Promise<{ processed: number; deleted: number; failed: string[] }> {
+  const accounts = await findAllAccounts();
   const failed: string[] = [];
   let processed = 0;
+  let deleted = 0;
 
-  console.log(`[syncMissingIds] Found ${accounts.length} accounts without Instagram ID`);
+  console.log(`[syncAllIds] Syncing ${accounts.length} accounts`);
 
   for (const account of accounts) {
     try {
-      const { id } = await resolveInstagramId(account.username);
-      await updateInstagramId(account.username, id);
+      const { id, followers, following } = await resolveInstagramId(account.username);
+      await upsertAccount({ instagram_id: id, username: account.username, followers, following });
       processed++;
-      // Polite delay between requests
       await new Promise((r) => setTimeout(r, 3_000));
     } catch (err) {
       const msg = `@${account.username}: ${err instanceof Error ? err.message : "Unknown error"}`;
-      console.error(`[syncMissingIds] Failed — ${msg}`);
+      console.error(`[syncAllIds] All strategies failed — deleting — ${msg}`);
       failed.push(msg);
+      try {
+        await deleteAccount(account.id);
+        deleted++;
+      } catch (delErr) {
+        console.error(`[syncAllIds] Could not delete @${account.username}:`, delErr);
+      }
       await new Promise((r) => setTimeout(r, 5_000));
     }
   }
 
-  console.log(`[syncMissingIds] Done — ${processed} synced, ${failed.length} failed`);
-  return { processed, failed };
+  console.log(`[syncAllIds] Done — ${processed} synced, ${deleted} deleted, ${failed.length} failed`);
+  return { processed, deleted, failed };
 }

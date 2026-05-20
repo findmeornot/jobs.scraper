@@ -31,31 +31,44 @@ export async function findAccountById(
 export async function findAllAccounts(filters?: {
   isExternal?: boolean;
   isActive?: boolean;
-}): Promise<InstagramAccount[]> {
+}): Promise<(InstagramAccount & { region_count: number })[]> {
   if (filters?.isExternal !== undefined && filters?.isActive !== undefined) {
-    return db<InstagramAccount[]>`
-      SELECT * FROM instagram_account
-      WHERE is_external = ${filters.isExternal ? 1 : 0}
-        AND is_active = ${filters.isActive ? 1 : 0}
-      ORDER BY created_at DESC
+    return db<any[]>`
+      SELECT ia.*, COUNT(ra.id) as region_count
+      FROM instagram_account ia
+      LEFT JOIN region_account ra ON ra.account_id = ia.id
+      WHERE ia.is_external = ${filters.isExternal ? 1 : 0}
+        AND ia.is_active = ${filters.isActive ? 1 : 0}
+      GROUP BY ia.id
+      ORDER BY ia.created_at DESC
     `;
   }
   if (filters?.isExternal !== undefined) {
-    return db<InstagramAccount[]>`
-      SELECT * FROM instagram_account
-      WHERE is_external = ${filters.isExternal ? 1 : 0}
-      ORDER BY created_at DESC
+    return db<any[]>`
+      SELECT ia.*, COUNT(ra.id) as region_count
+      FROM instagram_account ia
+      LEFT JOIN region_account ra ON ra.account_id = ia.id
+      WHERE ia.is_external = ${filters.isExternal ? 1 : 0}
+      GROUP BY ia.id
+      ORDER BY ia.created_at DESC
     `;
   }
   if (filters?.isActive !== undefined) {
-    return db<InstagramAccount[]>`
-      SELECT * FROM instagram_account
-      WHERE is_active = ${filters.isActive ? 1 : 0}
-      ORDER BY created_at DESC
+    return db<any[]>`
+      SELECT ia.*, COUNT(ra.id) as region_count
+      FROM instagram_account ia
+      LEFT JOIN region_account ra ON ra.account_id = ia.id
+      WHERE ia.is_active = ${filters.isActive ? 1 : 0}
+      GROUP BY ia.id
+      ORDER BY ia.created_at DESC
     `;
   }
-  return db<InstagramAccount[]>`
-    SELECT * FROM instagram_account ORDER BY created_at DESC
+  return db<any[]>`
+    SELECT ia.*, COUNT(ra.id) as region_count
+    FROM instagram_account ia
+    LEFT JOIN region_account ra ON ra.account_id = ia.id
+    GROUP BY ia.id
+    ORDER BY ia.created_at DESC
   `;
 }
 
@@ -83,11 +96,12 @@ export async function upsertAccount(data: {
   if (existing[0]) {
     await db`
       UPDATE instagram_account
-      SET followers = ${data.followers},
-          following = ${data.following}
+      SET instagram_id = ${data.instagram_id},
+          followers   = ${data.followers},
+          following   = ${data.following}
       WHERE id = ${existing[0].id}
     `;
-    return { ...existing[0], followers: data.followers, following: data.following };
+    return { ...existing[0], instagram_id: data.instagram_id, followers: data.followers, following: data.following };
   }
 
   const result = await db`
@@ -128,10 +142,17 @@ export async function createManualAccount(data: {
   return (await findAccountById(id))!;
 }
 
+export async function deleteAccount(id: number): Promise<void> {
+  await db`DELETE FROM instagram_account WHERE id = ${id}`;
+}
+
 export async function updateAccount(
   id: number,
-  data: Partial<Pick<InstagramAccount, "is_active" | "is_external" | "instagram_id" | "followers" | "following">>,
+  data: Partial<Pick<InstagramAccount, "username" | "is_active" | "is_external" | "instagram_id" | "followers" | "following">>,
 ): Promise<void> {
+  if (data.username !== undefined) {
+    await db`UPDATE instagram_account SET username = ${data.username} WHERE id = ${id}`;
+  }
   if (data.instagram_id !== undefined) {
     await db`UPDATE instagram_account SET instagram_id = ${data.instagram_id} WHERE id = ${id}`;
   }

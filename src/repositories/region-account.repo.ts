@@ -15,12 +15,14 @@ export async function findRegionAccountsByRegionId(
 
 export async function findRegionAccountsByAccountId(
   accountId: number,
-): Promise<Array<RegionAccount & { region_name: string }>> {
+): Promise<Array<RegionAccount & { region_name: string; province_name: string | null }>> {
   return db<any[]>`
-    SELECT ra.*, mr.name as region_name
+    SELECT ra.*, mr.name as region_name, mp.name as province_name
     FROM region_account ra
     JOIN master_region mr ON mr.id = ra.region_id
+    LEFT JOIN master_province mp ON mp.id = mr.province_id
     WHERE ra.account_id = ${accountId}
+    ORDER BY mr.name ASC
   `;
 }
 
