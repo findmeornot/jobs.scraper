@@ -28,6 +28,7 @@ import {
 } from "@/routes/master/group";
 import { scrapeStatusGet, scrapeSessionsGet, scrapeSessionLogsGet } from "@/routes/scrape-logs";
 import { scrapeControl } from "@/routes/scrape-control";
+import { imageProxy } from "@/routes/image-proxy";
 import { appConfig } from "@/config/app";
 import { getDashboardStats } from "@/repositories/instagram-content.repo";
 import { serverErr } from "@/utils/response";
@@ -51,7 +52,9 @@ export function startServer(): void {
       "/accounts": frontendIndex,
       "/regions": frontendIndex,
       "/logs": frontendIndex,
+      "/content": frontendIndex,
       "/api/health": { GET: () => Response.json({ ok: true, ts: Date.now() }) },
+      "/api/proxy/image": { GET: imageProxy },
       "/api/dashboard/stats": {
         GET: c(async () => {
           try {

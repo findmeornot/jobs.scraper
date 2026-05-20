@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Map, Pickaxe, ScrollText } from "lucide-react";
+import { LayoutDashboard, Users, Map, Pickaxe, ScrollText, ImagePlay } from "lucide-react";
 import { useScrapeStatus } from "@/hooks/use-scrape-status";
 import {
   Sidebar,
@@ -29,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
   { path: "/accounts", label: "Accounts", icon: Users },
   { path: "/regions", label: "Regions", icon: Map },
+  { path: "/content", label: "Content", icon: ImagePlay },
   { path: "/logs", label: "Logs", icon: ScrollText },
 ];
 
