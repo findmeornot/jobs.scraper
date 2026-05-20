@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { useScrapeStatus, type LiveLogEntry } from "@/hooks/use-scrape-status";
 import { useScrape } from "@/hooks/use-scrape";
-import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
@@ -150,10 +150,34 @@ export default function Logs() {
 
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
 
-  // Refresh sessions list when a scrape ends
+  // Inject a placeholder row immediately when a new session starts so the
+  // DataTable shows it without waiting for a full refetch.
+  const prevIsScraping = useRef(false);
   useEffect(() => {
-    if (!isScraping) fetchSessions();
-  }, [isScraping, fetchSessions]);
+    const wasOff = !prevIsScraping.current;
+    prevIsScraping.current = isScraping;
+
+    if (isScraping && wasOff && sessionId) {
+      // Session just started — prepend a live placeholder row
+      setSessions((prev) => {
+        if (prev.some((s) => s.id === sessionId)) return prev;
+        const placeholder: ScrapeSession = {
+          id: sessionId,
+          started_at: new Date().toISOString(),
+          finished_at: null,
+          total_accounts: 0,
+          success_count: 0,
+          error_count: 0,
+          deleted_count: 0,
+          status: "running",
+        };
+        return [placeholder, ...prev];
+      });
+    } else if (!isScraping && !wasOff) {
+      // Session just ended — fetch final stats from DB
+      fetchSessions();
+    }
+  }, [isScraping, sessionId, fetchSessions]);
 
   // Auto-scroll live log panel
   useEffect(() => {

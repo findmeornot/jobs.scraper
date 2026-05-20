@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { useAccounts, type Account, type AccountRegion } from "@/hooks/use-accounts";
 import { useRegions } from "@/hooks/use-regions";
-import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
@@ -79,6 +79,13 @@ export default function AccountManagement() {
   );
 
   async function handleSyncIds() {
+    const ok = await confirm({
+      title: "Sync all Instagram IDs?",
+      description: "All accounts will be re-synced. Accounts that cannot be resolved will be permanently deleted.",
+      confirmLabel: "Sync & Delete unresolvable",
+      variant: "destructive",
+    });
+    if (!ok) return;
     setSyncing(true);
     try {
       const res = await fetch("/api/instagram/profile/sync-ids", { method: "POST" });
@@ -149,6 +156,16 @@ export default function AccountManagement() {
   async function handleBulkAddRegions(regionIds: number[]) {
     if (!selectedAccount) return;
     for (const id of regionIds) await addRegionToAccount(id, selectedAccount.id);
+  }
+
+  async function handleRemoveRegion(regionId: number, accountId: number, regionName: string) {
+    const ok = await confirm({
+      title: "Remove from region?",
+      description: `This account will be unassigned from "${regionName}".`,
+      confirmLabel: "Remove",
+      variant: "destructive",
+    });
+    if (ok) await removeRegionFromAccount(regionId, accountId);
   }
 
   const columns = useMemo<ColumnDef<Account>[]>(
@@ -537,7 +554,7 @@ export default function AccountManagement() {
                         <Button
                           variant="ghost"
                           size="xs"
-                          onClick={() => removeRegionFromAccount(ar.region_id, ar.account_id)}
+                          onClick={() => handleRemoveRegion(ar.region_id, ar.account_id, ar.region_name)}
                           className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         >
                           Remove

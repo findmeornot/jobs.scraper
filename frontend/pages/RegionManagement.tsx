@@ -50,7 +50,7 @@ import type {
   ProvinceFormData,
   GroupFormData,
 } from "@/hooks/use-regions";
-import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useConfirm } from "@/hooks/use-confirm";
 import { cn } from "@/lib/utils";
 
 type ActivePanel = "regions" | "provinces" | "groups";
@@ -144,8 +144,18 @@ export default function RegionManagement() {
   }
 
   async function handleRemoveRegionFromGroup(region: Region) {
-    const ok = await confirm({ title: "Remove from group?", description: `"${region.name}" will be unassigned from this group.`, confirmLabel: "Remove" });
+    const ok = await confirm({ title: "Remove from group?", description: `"${region.name}" will be unassigned from this group.`, variant: "destructive", confirmLabel: "Remove" });
     if (ok) await updateRegionGroup(region.id, null);
+  }
+
+  async function handleRemoveAccountFromRegion(regionId: number, accountId: number, username: string) {
+    const ok = await confirm({
+      title: "Remove account?",
+      description: `@${username} will be unassigned from this region.`,
+      confirmLabel: "Remove",
+      variant: "destructive",
+    });
+    if (ok) await removeAccountFromRegion(regionId, accountId);
   }
 
   // --- Column definitions ---
@@ -342,7 +352,7 @@ export default function RegionManagement() {
                       <TableCell className="font-mono text-xs text-muted-foreground">{ra.instagram_id ?? "—"}</TableCell>
                       <TableCell><Badge variant={ra.is_active ? "default" : "outline"}>{ra.is_active ? "Active" : "Inactive"}</Badge></TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="xs" onClick={() => removeAccountFromRegion(selectedRegion!.id, ra.account_id)} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">Remove</Button>
+                        <Button variant="ghost" size="xs" onClick={() => handleRemoveAccountFromRegion(selectedRegion!.id, ra.account_id, ra.username)} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">Remove</Button>
                       </TableCell>
                     </TableRow>
                   ))}

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-interface ConfirmOptions {
+export interface ConfirmOptions {
   title: string;
   description?: string;
   confirmLabel?: string;
@@ -17,23 +17,19 @@ interface ConfirmOptions {
   variant?: "destructive" | "default";
 }
 
+export interface ConfirmContextValue {
+  confirm: (options: ConfirmOptions) => Promise<boolean>;
+}
+
+export const ConfirmContext = React.createContext<ConfirmContextValue | null>(null);
+
 interface ConfirmState {
   open: boolean;
   options: ConfirmOptions;
   resolve: ((value: boolean) => void) | null;
 }
 
-interface ConfirmContextValue {
-  confirm: (options: ConfirmOptions) => Promise<boolean>;
-}
-
-const ConfirmContext = React.createContext<ConfirmContextValue | null>(null);
-
-const DEFAULT_STATE: ConfirmState = {
-  open: false,
-  options: { title: "" },
-  resolve: null,
-};
+const DEFAULT_STATE: ConfirmState = { open: false, options: { title: "" }, resolve: null };
 
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<ConfirmState>(DEFAULT_STATE);
@@ -49,17 +45,10 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     setState(DEFAULT_STATE);
   }
 
-  const confirmLabel = state.options.confirmLabel ?? "Confirm";
-  const cancelLabel = state.options.cancelLabel ?? "Cancel";
-  const variant = state.options.variant ?? "default";
-
   return (
     <ConfirmContext.Provider value={{ confirm }}>
       {children}
-      <Dialog
-        open={state.open}
-        onOpenChange={(open) => { if (!open) handleClose(false); }}
-      >
+      <Dialog open={state.open} onOpenChange={(open) => { if (!open) handleClose(false); }}>
         <DialogContent className="sm:max-w-sm" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>{state.options.title}</DialogTitle>
@@ -69,23 +58,17 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => handleClose(false)}>
-              {cancelLabel}
+              {state.options.cancelLabel ?? "Cancel"}
             </Button>
             <Button
-              variant={variant === "destructive" ? "destructive" : "default"}
+              variant={state.options.variant === "destructive" ? "destructive" : "default"}
               onClick={() => handleClose(true)}
             >
-              {confirmLabel}
+              {state.options.confirmLabel ?? "Confirm"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </ConfirmContext.Provider>
   );
-}
-
-export function useConfirm(): (options: ConfirmOptions) => Promise<boolean> {
-  const ctx = React.useContext(ConfirmContext);
-  if (!ctx) throw new Error("useConfirm must be used within ConfirmProvider");
-  return ctx.confirm;
 }
