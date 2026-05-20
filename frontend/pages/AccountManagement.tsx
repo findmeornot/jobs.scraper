@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAccounts, type Account, type AccountRegion } from "@/hooks/use-accounts";
+import { AccountManagementSkeleton } from "@/components/ui/skeletons";
 import { useRegions } from "@/hooks/use-regions";
 import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "@/components/ui/toast";
@@ -308,6 +309,8 @@ export default function AccountManagement() {
     [syncingRows],
   );
 
+  if (loading) return <AccountManagementSkeleton />;
+
   return (
     <div className="space-y-5">
       <div className="flex items-start justify-between">
@@ -333,11 +336,7 @@ export default function AccountManagement() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" />
-        </div>
-      ) : accounts.length === 0 && filter === "all" ? (
+      {accounts.length === 0 && filter === "all" ? (
         <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
             <Users className="size-6 text-muted-foreground" />

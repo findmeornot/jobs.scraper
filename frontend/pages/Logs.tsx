@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useScrapeStatus, type LiveLogEntry } from "@/hooks/use-scrape-status";
+import { LogsSkeleton } from "@/components/ui/skeletons";
 import { useScrape } from "@/hooks/use-scrape";
 import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "@/components/ui/toast";
@@ -381,9 +382,7 @@ export default function Logs() {
 
       {/* Sessions table */}
       {loadingSessions ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="size-5 animate-spin text-muted-foreground" />
-        </div>
+        <LogsSkeleton />
       ) : sessions.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">

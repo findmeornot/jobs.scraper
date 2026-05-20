@@ -51,6 +51,7 @@ import type {
   GroupFormData,
 } from "@/hooks/use-regions";
 import { useConfirm } from "@/hooks/use-confirm";
+import { RegionManagementSkeleton } from "@/components/ui/skeletons";
 import { cn } from "@/lib/utils";
 
 type ActivePanel = "regions" | "provinces" | "groups";
@@ -279,7 +280,7 @@ export default function RegionManagement() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20 text-muted-foreground"><Loader2 className="size-5 animate-spin" /></div>
+        <RegionManagementSkeleton />
       ) : (
         <>
           {activePanel === "regions" && (

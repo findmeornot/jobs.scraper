@@ -29,6 +29,7 @@ import { ChartContainer, ChartTooltipContent, ChartLegendContent, type ChartConf
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 import { useScrape } from "@/hooks/use-scrape";
 import { useScrapeStatus } from "@/hooks/use-scrape-status";
+import { DashboardSkeleton } from "@/components/ui/skeletons";
 import { cn } from "@/lib/utils";
 
 const accountChartConfig = {
@@ -60,13 +61,7 @@ export default function Dashboard() {
     setLastRefreshed(new Date());
   }, [refetch]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-60 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <DashboardSkeleton />;
 
   if (error) {
     return (

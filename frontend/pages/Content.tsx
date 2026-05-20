@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { useContent, type ContentItem, type ContentGroup } from "@/hooks/use-content";
 import { useConfirm } from "@/hooks/use-confirm";
+import { ContentSkeleton } from "@/components/ui/skeletons";
 import { cn } from "@/lib/utils";
 
 // ─── Reviewer name (persisted) ───────────────────────────────────────────────
@@ -424,9 +425,7 @@ export default function Content() {
 
       {/* ── Content ── */}
       {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        </div>
+        <ContentSkeleton />
       ) : displayedGroups.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
