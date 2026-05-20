@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { scrapePosts } from "@/scraper/index";
 import { getAllAccounts, removeAccount } from "@/services/instagram-account.service";
 import { saveInstagramContent } from "@/services/instagram-content.service";
+import { scrapeLogService } from "@/services/scrape-log.service";
 import { subtractDays, now } from "@/utils/date";
 
 interface AccountState {
@@ -66,36 +67,45 @@ async function saveState(state: ScrapeState): Promise<void> {
 }
 
 export async function scrapeAllExternalAccounts(): Promise<void> {
+  if (scrapeLogService.isScraping) {
+    console.log("Scrape already in progress, skipping.");
+    return;
+  }
+
+  const sessionId = await scrapeLogService.startSession();
+
   try {
     const externalAccounts = await getAllAccounts(true);
     const state = await loadState(externalAccounts.map((a) => a.username));
 
     const allDone = Object.values(state.accounts).every((a) => a.status === 1);
     if (allDone) {
-      console.log("All accounts already processed today, skipping.");
+      await scrapeLogService.log(sessionId, "info", "All accounts already processed today, skipping.");
+      await scrapeLogService.endSession(sessionId, { totalAccounts: externalAccounts.length, successCount: 0, errorCount: 0, deletedCount: 0 });
       return;
     }
 
-    console.log(`Scraping ${externalAccounts.length} external accounts...`);
+    await scrapeLogService.log(sessionId, "info", `Starting scrape of ${externalAccounts.length} external accounts`);
     state.scrape_status = { last_run: now().toISOString(), is_completed: false };
     await saveState(state);
 
     const afterDate = subtractDays(2);
     let totalContent = 0;
+    let successCount = 0;
+    let errorCount = 0;
+    let deletedCount = 0;
 
     for (const account of externalAccounts) {
       if (state.accounts[account.username]?.status === 1) {
-        console.log(`Skipping ${account.username} — already done today`);
         continue;
       }
 
       if (!account.instagram_id) {
-        console.warn(`Skipping ${account.username} — no instagram_id`);
+        await scrapeLogService.log(sessionId, "warn", `Skipped — no Instagram ID`, { username: account.username });
         continue;
       }
 
       try {
-        console.log(`Scraping @${account.username}...`);
         const posts = await scrapePosts(account.instagram_id, undefined, afterDate);
 
         for (const post of posts.result) {
@@ -114,23 +124,26 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
           }
         }
 
-        state.accounts[account.username] = {
-          status: 1,
-          lastScrapedDate: now().toISOString(),
-        };
+        successCount++;
+        await scrapeLogService.log(sessionId, "success", `${posts.first} posts scraped`, {
+          username: account.username,
+          postsCount: posts.first,
+        });
+
+        state.accounts[account.username] = { status: 1, lastScrapedDate: now().toISOString() };
         state.scrape_status.last_run = now().toISOString();
         await saveState(state);
-
-        console.log(`@${account.username}: ${posts.first} posts scraped`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("User not found or private")) {
-          console.warn(`@${account.username}: not found or private — deleting account`);
+          await scrapeLogService.log(sessionId, "warn", `Not found or private — deleted`, { username: account.username });
+          deletedCount++;
           await removeAccount(account.id).catch((e) =>
             console.error(`Failed to delete @${account.username}:`, e),
           );
         } else {
-          console.error(`Error scraping @${account.username}:`, err);
+          errorCount++;
+          await scrapeLogService.log(sessionId, "error", msg, { username: account.username });
         }
       }
     }
@@ -138,9 +151,17 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
     state.lastRunDate = now().toISOString();
     state.scrape_status = { last_run: state.lastRunDate, is_completed: true };
     await saveState(state);
-    console.log(`Scrape complete. Total new content: ${totalContent}`);
+
+    await scrapeLogService.log(
+      sessionId,
+      "info",
+      `Scrape complete — ${successCount} success, ${errorCount} errors, ${deletedCount} deleted, ${totalContent} new posts`,
+    );
+    await scrapeLogService.endSession(sessionId, { totalAccounts: externalAccounts.length, successCount, errorCount, deletedCount });
   } catch (err) {
     console.error("Content cron error:", err);
+    await scrapeLogService.log(sessionId, "error", `Scrape failed: ${err instanceof Error ? err.message : String(err)}`);
+    await scrapeLogService.endSession(sessionId, { totalAccounts: 0, successCount: 0, errorCount: 1, deletedCount: 0 }, true);
   }
 }
 

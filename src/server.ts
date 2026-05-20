@@ -26,9 +26,12 @@ import {
   masterGroupPut,
   masterGroupDelete,
 } from "@/routes/master/group";
+import { scrapeStatusGet, scrapeSessionsGet, scrapeSessionLogsGet } from "@/routes/scrape-logs";
 import { appConfig } from "@/config/app";
 import { getDashboardStats } from "@/repositories/instagram-content.repo";
 import { serverErr } from "@/utils/response";
+import { wsManager } from "@/ws/manager";
+import { scrapeLogService } from "@/services/scrape-log.service";
 
 // @ts-ignore — Bun HTML import
 import frontendIndex from "../frontend/index.html";
@@ -46,6 +49,7 @@ export function startServer(): void {
       "/": frontendIndex,
       "/accounts": frontendIndex,
       "/regions": frontendIndex,
+      "/logs": frontendIndex,
       "/api/health": { GET: () => Response.json({ ok: true, ts: Date.now() }) },
       "/api/dashboard/stats": {
         GET: c(async () => {
@@ -57,6 +61,9 @@ export function startServer(): void {
           }
         }),
       },
+      "/api/scrape/status": { GET: c(scrapeStatusGet) },
+      "/api/scrape/sessions": { GET: c(scrapeSessionsGet) },
+      "/api/scrape/sessions/:id/logs": { GET: c(scrapeSessionLogsGet as any) },
       "/api/instagram/profile": {
         GET: c(profileGet),
         POST: c(profilePost),
@@ -113,6 +120,20 @@ export function startServer(): void {
       "/api/master/group/:id": {
         PUT: c(masterGroupPut as any),
         DELETE: c(masterGroupDelete as any),
+      },
+      "/ws": (req, server) => {
+        if (server.upgrade(req)) return;
+        return new Response("WebSocket upgrade required", { status: 426 });
+      },
+    },
+    websocket: {
+      open(ws) {
+        wsManager.add(ws);
+        ws.send(JSON.stringify({ type: "state", ...scrapeLogService.currentState() }));
+      },
+      message() {},
+      close(ws) {
+        wsManager.remove(ws);
       },
     },
     fetch() {

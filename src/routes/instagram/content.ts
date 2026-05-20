@@ -10,6 +10,7 @@ import { createManualAccount } from "@/repositories/instagram-account.repo";
 import { buildCdcPayload, forwardToCdc } from "@/services/cdc.service";
 import { scrapePosts } from "@/scraper/index";
 import { scrapeAllExternalAccounts } from "@/crons/instagram-content.cron";
+import { scrapeLogService } from "@/services/scrape-log.service";
 import { saveUploadedFile, ensureDir } from "@/utils/image";
 import { appConfig } from "@/config/app";
 import { join } from "path";
@@ -54,6 +55,9 @@ export async function contentPost(req: Request): Promise<Response> {
 }
 
 export async function contentScrape(req: Request): Promise<Response> {
+  if (scrapeLogService.isScraping) {
+    return Response.json({ success: false, message: "A scrape is already in progress" }, { status: 409 });
+  }
   console.log("Manual scrape triggered");
   void scrapeAllExternalAccounts();
   return Response.json({

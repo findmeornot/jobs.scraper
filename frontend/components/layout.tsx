@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Map, Pickaxe } from "lucide-react";
+import { LayoutDashboard, Users, Map, Pickaxe, ScrollText } from "lucide-react";
+import { useScrapeStatus } from "@/hooks/use-scrape-status";
 import {
   Sidebar,
   SidebarContent,
@@ -28,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
   { path: "/accounts", label: "Accounts", icon: Users },
   { path: "/regions", label: "Regions", icon: Map },
+  { path: "/logs", label: "Logs", icon: ScrollText },
 ];
 
 interface LayoutProps {
@@ -37,6 +39,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { isScraping } = useScrapeStatus();
 
   function isActive(path: string) {
     return path === "/" ? pathname === "/" : pathname.startsWith(path);
@@ -74,8 +77,16 @@ export default function Layout({ children }: LayoutProps) {
                         tooltip={item.label}
                         aria-current={isActive(item.path) ? "page" : undefined}
                       >
-                        <item.icon />
+                        <div className="relative">
+                          <item.icon />
+                          {item.path === "/logs" && isScraping && (
+                            <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-green-500 animate-pulse" />
+                          )}
+                        </div>
                         <span>{item.label}</span>
+                        {item.path === "/logs" && isScraping && (
+                          <span className="ml-auto size-1.5 rounded-full bg-green-500 animate-pulse group-data-[collapsible=icon]:hidden" />
+                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
