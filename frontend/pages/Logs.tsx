@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Play, Loader2, ScrollText, CheckCircle2, XCircle, AlertTriangle, Info, Clock } from "lucide-react";
+import { Play, Pause, RotateCcw, Square, Loader2, ScrollText, CheckCircle2, XCircle, AlertTriangle, Info, Clock } from "lucide-react";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { useScrapeStatus, type LiveLogEntry } from "@/hooks/use-scrape-status";
 import { useScrape } from "@/hooks/use-scrape";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 dayjs.extend(duration);
@@ -69,9 +71,62 @@ function LogLine({ entry }: { entry: LiveLogEntry }) {
   );
 }
 
+async function scrapeAction(action: "pause" | "resume" | "reset") {
+  const r = await fetch("/api/scrape/control", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action }),
+  });
+  if (!r.ok) {
+    const d = await r.json().catch(() => ({}));
+    toast.error("Control failed", d.message ?? "Unknown error");
+  }
+  return r.ok;
+}
+
+function useLiveStats(liveLogs: LiveLogEntry[], sessionId: string | null) {
+  return useMemo(() => {
+    const success = liveLogs.filter((e) => e.level === "success").length;
+    const error = liveLogs.filter((e) => e.level === "error" && e.account_username !== null).length;
+    const deleted = liveLogs.filter((e) => e.level === "warn" && e.message.includes("deleted")).length;
+    const startLog = liveLogs.find((e) => e.message.startsWith("Starting scrape of"));
+    const totalAccounts = Number(startLog?.message.match(/Starting scrape of (\d+)/)?.[1] ?? 0);
+    return { success, error, deleted, totalAccounts, sessionId };
+  }, [liveLogs, sessionId]);
+}
+
 export default function Logs() {
-  const { isScraping, sessionId, liveLogs, connected } = useScrapeStatus();
+  const { isScraping, isPaused, sessionId, liveLogs, connected } = useScrapeStatus();
   const { triggerScrape } = useScrape();
+  const confirm = useConfirm();
+  const [controlling, setControlling] = useState(false);
+  const liveStats = useLiveStats(liveLogs, sessionId);
+
+  async function handlePause() {
+    setControlling(true);
+    await scrapeAction("pause");
+    setControlling(false);
+  }
+
+  async function handleResume() {
+    setControlling(true);
+    await scrapeAction("resume");
+    setControlling(false);
+  }
+
+  async function handleReset() {
+    const ok = await confirm({
+      title: "Stop and reset?",
+      description: "The scrape will be stopped and all content scraped in this session will be deleted (excluding confirmed items).",
+      variant: "destructive",
+      confirmLabel: "Stop & Delete",
+    });
+    if (!ok) return;
+    setControlling(true);
+    const success = await scrapeAction("reset");
+    if (success) toast.success("Session reset", "Scrape stopped and session content deleted.");
+    setControlling(false);
+  }
 
   const [sessions, setSessions] = useState<ScrapeSession[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
@@ -119,6 +174,18 @@ export default function Logs() {
     }
   }
 
+  const displaySessions = useMemo(() => sessions.map((s) => {
+    if (s.id !== sessionId) return s;
+    return {
+      ...s,
+      status: (isPaused ? "paused" : "running") as ScrapeSession["status"],
+      total_accounts: liveStats.totalAccounts || s.total_accounts,
+      success_count: liveStats.success,
+      error_count: liveStats.error,
+      deleted_count: liveStats.deleted,
+    };
+  }), [sessions, sessionId, isPaused, liveStats]);
+
   const columns: ColumnDef<ScrapeSession>[] = [
     {
       accessorKey: "started_at",
@@ -134,10 +201,16 @@ export default function Logs() {
       header: "Status",
       enableSorting: false,
       cell: ({ row }) => {
-        const s = row.getValue<ScrapeSession["status"]>("status");
+        const s = row.getValue<string>("status");
         return (
-          <Badge variant={s === "completed" ? "default" : s === "running" ? "secondary" : "destructive"}>
+          <Badge variant={
+            s === "completed" ? "default" :
+            s === "running" ? "secondary" :
+            s === "paused" ? "outline" :
+            "destructive"
+          }>
             {s === "running" && <Loader2 className="size-3 animate-spin mr-1" />}
+            {s === "paused" && <Pause className="size-3 mr-1 text-yellow-500" />}
             {s}
           </Badge>
         );
@@ -231,8 +304,12 @@ export default function Logs() {
           <p className="text-sm text-muted-foreground mt-1">Historical scrape runs and real-time activity</p>
         </div>
         <Button size="sm" onClick={triggerScrape} disabled={isScraping}>
-          {isScraping ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}
-          {isScraping ? "Scraping…" : "Trigger Scrape"}
+          {isScraping
+            ? isPaused
+              ? <><Pause className="size-4" />Paused</>
+              : <><Loader2 className="size-4 animate-spin" />Scraping…</>
+            : <><Play className="size-4" />Trigger Scrape</>
+          }
         </Button>
       </div>
 
@@ -241,15 +318,34 @@ export default function Logs() {
         <div className="rounded-xl border border-border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2.5 bg-muted/40 border-b border-border">
             <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs font-medium">Live — Session {sessionId?.slice(0, 8)}…</span>
+              <span className={cn("size-2 rounded-full", isPaused ? "bg-yellow-400" : "bg-green-500 animate-pulse")} />
+              <span className="text-xs font-medium">
+                {isPaused ? "Paused" : "Live"} — Session {sessionId?.slice(0, 8)}…
+              </span>
+              <span className="text-xs text-muted-foreground">{liveLogs.length} entries</span>
             </div>
-            <span className="text-xs text-muted-foreground">{liveLogs.length} entries</span>
+            <div className="flex items-center gap-1">
+              {isPaused ? (
+                <Button variant="outline" size="xs" onClick={handleResume} disabled={controlling} className="gap-1">
+                  <Play className="size-3" />Resume
+                </Button>
+              ) : (
+                <Button variant="outline" size="xs" onClick={handlePause} disabled={controlling} className="gap-1">
+                  <Pause className="size-3" />Pause
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={handleReset}
+                disabled={controlling}
+                className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+              >
+                <RotateCcw className="size-3" />Reset
+              </Button>
+            </div>
           </div>
-          <div
-            ref={liveScrollRef}
-            className="max-h-72 overflow-y-auto bg-card"
-          >
+          <div ref={liveScrollRef} className="max-h-72 overflow-y-auto bg-card">
             {liveLogs.length === 0 ? (
               <div className="py-8 text-center text-xs text-muted-foreground">Waiting for logs…</div>
             ) : (
@@ -277,7 +373,7 @@ export default function Logs() {
       ) : (
         <DataTable
           columns={columns}
-          data={sessions}
+          data={displaySessions}
           pageSize={18}
         />
       )}

@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Activity,
   Play,
+  Pause,
   RefreshCw,
   Loader2,
   TrendingUp,
@@ -27,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltipContent, ChartLegendContent, type ChartConfig } from "@/components/ui/chart";
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 import { useScrape } from "@/hooks/use-scrape";
+import { useScrapeStatus } from "@/hooks/use-scrape-status";
 import { cn } from "@/lib/utils";
 
 const accountChartConfig = {
@@ -51,6 +53,7 @@ export default function Dashboard() {
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const { stats, loading, error, refetch } = useDashboardStats();
   const { isScraping, triggerScrape } = useScrape();
+  const { isPaused } = useScrapeStatus();
 
   const handleRefresh = useCallback(() => {
     refetch();
@@ -114,7 +117,12 @@ export default function Dashboard() {
             <RefreshCw className={cn("size-4", loading && "animate-spin")} />
           </Button>
           <Button size="sm" onClick={triggerScrape} disabled={isScraping}>
-            {isScraping ? <><Loader2 className="size-4 animate-spin" />Scraping...</> : <><Play className="size-4" />Trigger Scrape</>}
+            {isScraping
+              ? isPaused
+                ? <><Pause className="size-4" />Paused</>
+                : <><Loader2 className="size-4 animate-spin" />Scraping...</>
+              : <><Play className="size-4" />Trigger Scrape</>
+            }
           </Button>
         </div>
       </div>

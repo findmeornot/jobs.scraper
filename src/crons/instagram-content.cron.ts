@@ -81,7 +81,7 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
     const allDone = Object.values(state.accounts).every((a) => a.status === 1);
     if (allDone) {
       await scrapeLogService.log(sessionId, "info", "All accounts already processed today, skipping.");
-      await scrapeLogService.endSession(sessionId, { totalAccounts: externalAccounts.length, successCount: 0, errorCount: 0, deletedCount: 0 });
+      await scrapeLogService.endSession(sessionId, { totalAccounts: externalAccounts.length, successCount: 0, errorCount: 0, deletedCount: 0 }, "completed");
       return;
     }
 
@@ -96,6 +96,15 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
     let deletedCount = 0;
 
     for (const account of externalAccounts) {
+      // Wait while paused (blocks here until resumed or stopped)
+      await scrapeLogService.waitIfPaused();
+
+      // Exit if stop was requested
+      if (scrapeLogService.stopRequested) {
+        await scrapeLogService.log(sessionId, "warn", "Scrape stopped by user");
+        break;
+      }
+
       if (state.accounts[account.username]?.status === 1) {
         continue;
       }
@@ -157,11 +166,12 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
       "info",
       `Scrape complete — ${successCount} success, ${errorCount} errors, ${deletedCount} deleted, ${totalContent} new posts`,
     );
-    await scrapeLogService.endSession(sessionId, { totalAccounts: externalAccounts.length, successCount, errorCount, deletedCount });
+    const endStatus = scrapeLogService.stopRequested ? "failed" : "completed";
+    await scrapeLogService.endSession(sessionId, { totalAccounts: externalAccounts.length, successCount, errorCount, deletedCount }, endStatus);
   } catch (err) {
     console.error("Content cron error:", err);
     await scrapeLogService.log(sessionId, "error", `Scrape failed: ${err instanceof Error ? err.message : String(err)}`);
-    await scrapeLogService.endSession(sessionId, { totalAccounts: 0, successCount: 0, errorCount: 1, deletedCount: 0 }, true);
+    await scrapeLogService.endSession(sessionId, { totalAccounts: 0, successCount: 0, errorCount: 1, deletedCount: 0 }, "failed");
   }
 }
 

@@ -89,6 +89,14 @@ export async function rejectContent(id: number): Promise<void> {
   await db`DELETE FROM instagram_content WHERE id = ${id}`;
 }
 
+export async function deleteContentSince(since: Date): Promise<number> {
+  const result = await db`
+    DELETE FROM instagram_content
+    WHERE created_at >= ${since} AND confirmed_at IS NULL
+  `;
+  return Number((result as any).affectedRows ?? 0);
+}
+
 export async function getContentGroupedByGroup(filters: {
   date?: string;
   showUnverifiedOnly?: boolean;

@@ -12,6 +12,7 @@ export interface LiveLogEntry {
 
 interface ScrapeStatusState {
   isScraping: boolean;
+  isPaused: boolean;
   sessionId: string | null;
   connected: boolean;
   liveLogs: LiveLogEntry[];
@@ -23,6 +24,7 @@ interface ScrapeStatusContextValue extends ScrapeStatusState {
 
 const ScrapeStatusContext = createContext<ScrapeStatusContextValue>({
   isScraping: false,
+  isPaused: false,
   sessionId: null,
   connected: false,
   liveLogs: [],
@@ -34,6 +36,7 @@ const MAX_LIVE_LOGS = 500;
 export function ScrapeStatusProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ScrapeStatusState>({
     isScraping: false,
+    isPaused: false,
     sessionId: null,
     connected: false,
     liveLogs: [],
@@ -60,8 +63,8 @@ export function ScrapeStatusProvider({ children }: { children: ReactNode }) {
           setState((s) => ({
             ...s,
             isScraping: msg.isScraping,
+            isPaused: msg.isPaused ?? false,
             sessionId: msg.sessionId,
-            // clear live logs when a new session starts
             liveLogs: msg.isScraping && !s.isScraping ? [] : s.liveLogs,
           }));
         } else if (msg.type === "log") {

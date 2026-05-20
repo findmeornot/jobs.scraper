@@ -27,6 +27,7 @@ import {
   masterGroupDelete,
 } from "@/routes/master/group";
 import { scrapeStatusGet, scrapeSessionsGet, scrapeSessionLogsGet } from "@/routes/scrape-logs";
+import { scrapeControl } from "@/routes/scrape-control";
 import { appConfig } from "@/config/app";
 import { getDashboardStats } from "@/repositories/instagram-content.repo";
 import { serverErr } from "@/utils/response";
@@ -62,6 +63,7 @@ export function startServer(): void {
         }),
       },
       "/api/scrape/status": { GET: c(scrapeStatusGet) },
+      "/api/scrape/control": { POST: c(scrapeControl) },
       "/api/scrape/sessions": { GET: c(scrapeSessionsGet) },
       "/api/scrape/sessions/:id/logs": { GET: c(scrapeSessionLogsGet as any) },
       "/api/instagram/profile": {
