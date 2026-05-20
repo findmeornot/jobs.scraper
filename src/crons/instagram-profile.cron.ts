@@ -1,6 +1,5 @@
 import cron from "node-cron";
 import { getAllAccounts, saveOrUpdateAccount } from "@/services/instagram-account.service";
-import { syncInstagramAccounts } from "@/services/sync.service";
 import { scrapeProfile } from "@/scraper/index";
 import { fetchUserInfo } from "@/scraper/fetch";
 import { instagramConfig } from "@/config/instagram";
@@ -67,9 +66,7 @@ export async function updateInstagramProfiles(): Promise<void> {
       }
     }
 
-    console.log("Profile update complete. Syncing accounts...");
-    const syncResult = await syncInstagramAccounts();
-    console.log(`Sync result: ${syncResult.message}`);
+    console.log("Profile update complete.");
   } catch (err) {
     console.error("Profile cron error:", err);
   }
