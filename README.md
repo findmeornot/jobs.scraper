@@ -90,7 +90,7 @@ bun run db:setup
 bun run dev
 ```
 
-The app is available at `http://localhost:3001` by default.
+The app is available at `http://localhost:3000` by default.
 
 ---
 
@@ -102,8 +102,8 @@ Create a `.env` file in the project root. Variables with defaults shown are opti
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | `3001` | HTTP server port |
-| `APP_URL` | `http://localhost:3001` | Public URL of the app |
+| `PORT` | `3000` | HTTP server port |
+| `APP_URL` | `http://localhost:3000` | Public URL of the app |
 | `PASSWORD` | — | **Required.** Dashboard login password |
 
 ### Database
@@ -138,7 +138,7 @@ Create a `.env` file in the project root. Variables with defaults shown are opti
 ### Example `.env`
 
 ```env
-PORT=3001
+PORT=3000
 PASSWORD=your_secure_password
 
 DB_HOST=127.0.0.1
