@@ -1,7 +1,11 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, Map, Pickaxe, ScrollText, ImagePlay } from "lucide-react";
+import { LayoutDashboard, Users, Map, Pickaxe, ScrollText, ImagePlay, LogOut } from "lucide-react";
 import { useScrapeStore } from "@/stores/scrape.store";
+import { useQueryClient } from "@tanstack/react-query";
+import { useLogout } from "@/hooks/use-auth";
+import { useAuthStore } from "@/stores/auth.store";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -42,6 +46,17 @@ export default function Layout({ children }: LayoutProps) {
   const { pathname } = useLocation();
   const isScraping = useScrapeStore((s) => s.isScraping);
   const { setScrapeState, appendLog, dispatchContentProcessed } = useScrapeStore();
+
+  const queryClient = useQueryClient();
+  const logout = useLogout();
+  const setAuthenticated = useAuthStore((s) => s.setAuthenticated);
+
+  async function handleLogout() {
+    await logout.mutateAsync();
+    queryClient.setQueryData(["auth", "me"], { authenticated: false });
+    setAuthenticated(false);
+    navigate("/login", { replace: true });
+  }
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout>>(null);
@@ -157,6 +172,16 @@ export default function Layout({ children }: LayoutProps) {
                 <span className="text-sm text-muted-foreground">{currentPage.label}</span>
               </>
             )}
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="ml-auto text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="size-4 mr-2" />
+              Logout
+            </Button>
           </header>
           <div className="flex-1 overflow-auto p-6">{children}</div>
         </SidebarInset>
