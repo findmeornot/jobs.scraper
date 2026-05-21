@@ -17,6 +17,18 @@ async function bootstrap(): Promise<void> {
     logger.warn("PASSWORD env variable is not set — all login attempts will be rejected");
   }
 
+  logger.info(
+    {
+      DB_HOST: process.env.DB_HOST ?? "(not set)",
+      DB_PORT: process.env.DB_PORT ?? "(not set)",
+      DB_NAME: process.env.DB_NAME ?? "(not set)",
+      DB_USERNAME: process.env.DB_USERNAME ?? "(not set)",
+      DB_PASSWORD_SET: !!process.env.DB_PASSWORD,
+      PASSWORD_SET: !!process.env.PASSWORD,
+    },
+    "Environment check",
+  );
+
   try {
     await db`SELECT 1`;
     logger.info("Database connected");
