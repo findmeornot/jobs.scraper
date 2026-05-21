@@ -14,8 +14,7 @@ process.env.TZ = "Asia/Jakarta";
 
 async function bootstrap(): Promise<void> {
   if (!process.env.PASSWORD) {
-    logger.error("PASSWORD env variable is not set — refusing to start");
-    process.exit(1);
+    logger.warn("PASSWORD env variable is not set — all login attempts will be rejected");
   }
 
   try {
