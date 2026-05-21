@@ -32,6 +32,7 @@
       "@/types": ["./frontend/types/index"],
       "@/types/*": ["./frontend/types/*"],
       "@/pages/*": ["./frontend/pages/*"],
+      "@/providers/*": ["./frontend/providers/*"],
     },
 
     "noUnusedLocals": true,
