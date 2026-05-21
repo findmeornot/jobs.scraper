@@ -54,7 +54,7 @@ export async function saveContent(data: {
     if (existing) return existing;
   }
 
-  await db`
+  const insertRows = await db<Array<{ id: number }>>`
     INSERT INTO instagram_content
       (instagram_id, caption, shortcode, display_url, account_id, posted_at)
     VALUES
@@ -64,10 +64,10 @@ export async function saveContent(data: {
        ${data.display_url},
        ${data.account_id ?? null},
        ${data.posted_at ?? null})
+    RETURNING id
   `;
 
-  const idRows = await db<Array<{ id: number }>>`SELECT LAST_INSERT_ID() as id`;
-  const id = Number(idRows[0]?.id ?? 0);
+  const id = Number(insertRows[0]?.id ?? 0);
   if (!id) return null;
 
   const rows = await db<InstagramContent[]>`
@@ -93,11 +93,12 @@ export async function rejectContent(id: number): Promise<void> {
 }
 
 export async function deleteContentSince(since: Date): Promise<number> {
-  const result = await db`
+  const rows = await db<Array<{ id: number }>>`
     DELETE FROM instagram_content
     WHERE created_at >= ${since} AND confirmed_at IS NULL
+    RETURNING id
   `;
-  return Number((result as unknown as { affectedRows?: number }).affectedRows ?? 0);
+  return rows.length;
 }
 
 export async function getContentGroupedByGroup(filters: {
@@ -155,12 +156,12 @@ export async function saveManualContent(data: {
   account_id: number;
   posted_at: Date;
 }): Promise<InstagramContent | null> {
-  await db`
+  const insertRows = await db<Array<{ id: number }>>`
     INSERT INTO instagram_content (display_url, account_id, posted_at, created_at)
     VALUES (${data.display_url}, ${data.account_id}, ${data.posted_at}, ${data.posted_at})
+    RETURNING id
   `;
-  const idRows = await db<Array<{ id: number }>>`SELECT LAST_INSERT_ID() as id`;
-  const id = Number(idRows[0]?.id ?? 0);
+  const id = Number(insertRows[0]?.id ?? 0);
   if (!id) return null;
 
   const rows = await db<InstagramContent[]>`

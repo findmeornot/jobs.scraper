@@ -77,11 +77,12 @@ export async function upsertAccount(data: {
     };
   }
 
-  const result = await db`
+  const rows = await db<Array<{ id: number }>>`
     INSERT INTO instagram_account (instagram_id, username, followers, following)
     VALUES (${data.instagram_id}, ${data.username}, ${data.followers}, ${data.following})
+    RETURNING id
   `;
-  const id = Number(result.lastInsertRowid);
+  const id = Number(rows[0]?.id ?? 0);
   return (await findAccountById(id))!;
 }
 
@@ -98,15 +99,17 @@ export async function createManualAccount(data: {
   const existing = await findAccountByUsername(data.username);
   if (existing) return existing;
 
-  const result = await db`
+  const rows = await db<Array<{ id: number }>>`
     INSERT INTO instagram_account (username, is_external, is_active, is_manual_input)
     VALUES (${data.username}, 0, 0, 1)
+    RETURNING id
   `;
-  const id = Number(result.lastInsertRowid);
+  const id = Number(rows[0]?.id ?? 0);
 
   await db`
-    INSERT IGNORE INTO region_account (region_id, account_id)
+    INSERT INTO region_account (region_id, account_id)
     VALUES (${data.region_id}, ${id})
+    ON CONFLICT DO NOTHING
   `;
 
   return (await findAccountById(id))!;

@@ -54,12 +54,13 @@ export async function insertLog(entry: {
   accountUsername: string | null;
   postsCount: number | null;
 }): Promise<ScrapeLogEntry> {
-  const result = await db`
+  const rows = await db<Array<{ id: number }>>`
     INSERT INTO scrape_log (session_id, level, message, account_username, posts_count)
     VALUES (${entry.sessionId}, ${entry.level}, ${entry.message}, ${entry.accountUsername}, ${entry.postsCount})
+    RETURNING id
   `;
   return {
-    id: Number(result.lastInsertRowid ?? result.insertId ?? 0),
+    id: Number(rows[0]?.id ?? 0),
     session_id: entry.sessionId,
     level: entry.level,
     message: entry.message,
@@ -70,12 +71,13 @@ export async function insertLog(entry: {
 }
 
 export async function markStuckSessionsFailed(): Promise<number> {
-  const result = await db`
+  const rows = await db<Array<{ id: string }>>`
     UPDATE scrape_session
-    SET status = 'failed', finished_at = CURRENT_TIMESTAMP(3)
+    SET status = 'failed', finished_at = CURRENT_TIMESTAMP
     WHERE status IN ('running', 'paused') AND finished_at IS NULL
+    RETURNING id
   `;
-  return Number((result as unknown as { affectedRows?: number }).affectedRows ?? 0);
+  return rows.length;
 }
 
 export async function findRecentSessions(limit = 50): Promise<ScrapeSession[]> {

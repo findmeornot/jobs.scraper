@@ -8,12 +8,9 @@ import {
   COOKIE_MAX_AGE,
 } from "@/utils/session";
 
-const COOKIE_ATTRS = [
-  `Max-Age=${COOKIE_MAX_AGE}`,
-  "HttpOnly",
-  "SameSite=Strict",
-  "Path=/",
-].join("; ");
+const COOKIE_ATTRS = [`Max-Age=${COOKIE_MAX_AGE}`, "HttpOnly", "SameSite=Strict", "Path=/"].join(
+  "; ",
+);
 
 const CLEAR_COOKIE = `${COOKIE_NAME}=; Max-Age=0; HttpOnly; SameSite=Strict; Path=/`;
 
@@ -65,10 +62,7 @@ export function authLogout(req: Request): Response {
   const token = parseCookieToken(req.headers.get("cookie"));
   if (token) deleteSession(token);
 
-  return Response.json(
-    { success: true },
-    { headers: { "Set-Cookie": CLEAR_COOKIE } },
-  );
+  return Response.json({ success: true }, { headers: { "Set-Cookie": CLEAR_COOKIE } });
 }
 
 /**

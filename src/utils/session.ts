@@ -10,12 +10,15 @@ interface Session {
 const store = new Map<string, Session>();
 
 // Purge expired sessions every hour to keep memory bounded
-setInterval(() => {
-  const now = Date.now();
-  for (const [token, session] of store) {
-    if (now > session.expiresAt) store.delete(token);
-  }
-}, 60 * 60 * 1000).unref();
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [token, session] of store) {
+      if (now > session.expiresAt) store.delete(token);
+    }
+  },
+  60 * 60 * 1000,
+).unref();
 
 export function createSession(): string {
   const token = randomBytes(32).toString("hex");

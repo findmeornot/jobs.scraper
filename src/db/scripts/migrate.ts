@@ -6,13 +6,12 @@ async function runMigrations() {
   try {
     // Ensure migrations table exists
     await db`
-      CREATE TABLE IF NOT EXISTS \`_migrations\` (
-        \`id\` int NOT NULL AUTO_INCREMENT,
-        \`name\` varchar(255) NOT NULL,
-        \`applied_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-        PRIMARY KEY (\`id\`),
-        UNIQUE KEY (\`name\`)
-      ) ENGINE=InnoDB;
+      CREATE TABLE IF NOT EXISTS _migrations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (name)
+      );
     `;
 
     const migrationsDir = join(import.meta.dir, "..", "migrations");
@@ -20,7 +19,7 @@ async function runMigrations() {
     const sqlFiles = files.filter((f) => f.endsWith(".sql")).sort();
 
     for (const file of sqlFiles) {
-      const existing = await db`SELECT id FROM \`_migrations\` WHERE name = ${file}`;
+      const existing = await db`SELECT id FROM _migrations WHERE name = ${file}`;
 
       if (existing.length === 0) {
         console.log(`Applying migration: ${file}...`);
@@ -38,7 +37,7 @@ async function runMigrations() {
           }
         }
 
-        await db`INSERT INTO \`_migrations\` (name) VALUES (${file})`;
+        await db`INSERT INTO _migrations (name) VALUES (${file})`;
         console.log(`Migration ${file} applied successfully.`);
       } else {
         console.log(`Migration ${file} already applied, skipping.`);

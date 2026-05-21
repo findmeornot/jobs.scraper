@@ -58,12 +58,12 @@ export async function createRegion(data: {
   group_id?: number | null;
   js_loker?: number | null;
 }): Promise<MasterRegion | null> {
-  await db`
+  const rows = await db<Array<{ id: number }>>`
     INSERT INTO master_region (name, province_id, group_id, js_loker)
     VALUES (${data.name}, ${data.province_id}, ${data.group_id ?? null}, ${data.js_loker ?? null})
+    RETURNING id
   `;
-  const idRows = await db<Array<{ id: number }>>`SELECT LAST_INSERT_ID() as id`;
-  const id = Number(idRows[0]?.id ?? 0);
+  const id = Number(rows[0]?.id ?? 0);
   if (!id) return null;
   return findRegionById(id);
 }
@@ -98,7 +98,7 @@ export async function deleteRegion(id: number): Promise<void> {
 export async function getRandomRegionByGroupId(groupId: number): Promise<MasterRegion | null> {
   const rows = await db<MasterRegion[]>`
     SELECT * FROM master_region WHERE group_id = ${groupId}
-    ORDER BY RAND() LIMIT 1
+    ORDER BY RANDOM() LIMIT 1
   `;
   return rows[0] ?? null;
 }

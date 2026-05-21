@@ -32,8 +32,9 @@ export async function findRegionAccountsByAccountId(
 
 export async function addAccountToRegion(regionId: number, accountId: number): Promise<void> {
   await db`
-    INSERT IGNORE INTO region_account (region_id, account_id)
+    INSERT INTO region_account (region_id, account_id)
     VALUES (${regionId}, ${accountId})
+    ON CONFLICT DO NOTHING
   `;
 }
 

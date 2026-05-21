@@ -18,9 +18,11 @@ export async function findProvinceById(id: number): Promise<MasterProvince | nul
 }
 
 export async function createProvince(name: string): Promise<MasterProvince | null> {
-  await db`INSERT INTO master_province (name) VALUES (${name})`;
-  const idRows = await db<Array<{ id: number }>>`SELECT LAST_INSERT_ID() as id`;
-  const id = Number(idRows[0]?.id ?? 0);
+  const rows = await db<Array<{ id: number }>>`
+    INSERT INTO master_province (name) VALUES (${name})
+    RETURNING id
+  `;
+  const id = Number(rows[0]?.id ?? 0);
   if (!id) return null;
   return findProvinceById(id);
 }
