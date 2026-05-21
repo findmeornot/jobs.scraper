@@ -98,71 +98,8 @@ export async function getContentGroupedByGroup(filters: {
   date?: string;
   showUnverifiedOnly?: boolean;
 }): Promise<ContentRow[]> {
-  const { date, showUnverifiedOnly } = filters;
-
-  if (date && showUnverifiedOnly) {
-    return db<ContentRow[]>`
-      SELECT
-        mg.id as group_id, mg.name as group_name,
-        mr.id as region_id, mr.name as region_name,
-        ia.id as account_id, ia.username,
-        ic.id, ic.instagram_id, ic.caption, ic.display_url,
-        ic.remote_url, ic.shortcode, ic.posted_at,
-        ic.confirmed_at, ic.rejected_at, ic.action_by,
-        ic.created_at as content_created_at
-      FROM master_group mg
-      LEFT JOIN master_region mr ON mr.group_id = mg.id
-      LEFT JOIN region_account ra ON ra.region_id = mr.id
-      LEFT JOIN instagram_account ia ON ia.id = ra.account_id
-      LEFT JOIN instagram_content ic ON ic.account_id = ia.id
-        AND ic.rejected_at IS NULL
-        AND CAST(ic.created_at AS DATE) = CAST(${date} AS DATE)
-        AND ic.confirmed_at IS NULL
-      ORDER BY mg.name ASC, ia.username ASC, ic.posted_at DESC
-    `;
-  }
-
-  if (date) {
-    return db<ContentRow[]>`
-      SELECT
-        mg.id as group_id, mg.name as group_name,
-        mr.id as region_id, mr.name as region_name,
-        ia.id as account_id, ia.username,
-        ic.id, ic.instagram_id, ic.caption, ic.display_url,
-        ic.remote_url, ic.shortcode, ic.posted_at,
-        ic.confirmed_at, ic.rejected_at, ic.action_by,
-        ic.created_at as content_created_at
-      FROM master_group mg
-      LEFT JOIN master_region mr ON mr.group_id = mg.id
-      LEFT JOIN region_account ra ON ra.region_id = mr.id
-      LEFT JOIN instagram_account ia ON ia.id = ra.account_id
-      LEFT JOIN instagram_content ic ON ic.account_id = ia.id
-        AND ic.rejected_at IS NULL
-        AND CAST(ic.created_at AS DATE) = CAST(${date} AS DATE)
-      ORDER BY mg.name ASC, ia.username ASC, ic.posted_at DESC
-    `;
-  }
-
-  if (showUnverifiedOnly) {
-    return db<ContentRow[]>`
-      SELECT
-        mg.id as group_id, mg.name as group_name,
-        mr.id as region_id, mr.name as region_name,
-        ia.id as account_id, ia.username,
-        ic.id, ic.instagram_id, ic.caption, ic.display_url,
-        ic.remote_url, ic.shortcode, ic.posted_at,
-        ic.confirmed_at, ic.rejected_at, ic.action_by,
-        ic.created_at as content_created_at
-      FROM master_group mg
-      LEFT JOIN master_region mr ON mr.group_id = mg.id
-      LEFT JOIN region_account ra ON ra.region_id = mr.id
-      LEFT JOIN instagram_account ia ON ia.id = ra.account_id
-      LEFT JOIN instagram_content ic ON ic.account_id = ia.id
-        AND ic.rejected_at IS NULL
-        AND ic.confirmed_at IS NULL
-      ORDER BY mg.name ASC, ia.username ASC, ic.posted_at DESC
-    `;
-  }
+  const dateVal = filters.date ?? null;
+  const unverifiedFlag = filters.showUnverifiedOnly ? 1 : 0;
 
   return db<ContentRow[]>`
     SELECT
@@ -179,6 +116,8 @@ export async function getContentGroupedByGroup(filters: {
     LEFT JOIN instagram_account ia ON ia.id = ra.account_id
     LEFT JOIN instagram_content ic ON ic.account_id = ia.id
       AND ic.rejected_at IS NULL
+      AND (${dateVal} IS NULL OR CAST(ic.created_at AS DATE) = CAST(${dateVal} AS DATE))
+      AND (${unverifiedFlag} = 0 OR ic.confirmed_at IS NULL)
     ORDER BY mg.name ASC, ia.username ASC, ic.posted_at DESC
   `;
 }

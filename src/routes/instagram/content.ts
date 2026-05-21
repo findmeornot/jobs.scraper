@@ -1,23 +1,30 @@
+import { z } from "zod";
 import { ok, err, serverErr } from "@/utils/response";
+import { logger } from "@/utils/logger";
+import { getParams, parseBody } from "@/utils/request";
 import { getContentForReview, saveInstagramContent } from "@/services/instagram-content.service";
-import {
-  saveManualContent,
-  confirmContent,
-  rejectContent,
-  findContentWithRelations,
-  updateContentRemoteUrl,
-} from "@/repositories/instagram-content.repo";
+import { saveManualContent, confirmContent, rejectContent } from "@/repositories/instagram-content.repo";
 import { getRandomRegionByGroupId } from "@/repositories/master-region.repo";
 import { createManualAccount } from "@/repositories/instagram-account.repo";
-import { buildCdcPayload, forwardToCdc } from "@/services/cdc.service";
-import { geminiConfig } from "@/config/gemini";
+import { processContentInBackground } from "@/services/content-processing.service";
 import { scrapePosts } from "@/scraper/index";
 import { scrapeAllExternalAccounts } from "@/crons/instagram-content.cron";
 import { scrapeLogService } from "@/services/scrape-log.service";
-import { wsManager } from "@/ws/manager";
 import { saveUploadedFile, ensureDir } from "@/utils/image";
 import { appConfig } from "@/config/app";
-import { join } from "path";
+import { join, basename } from "path";
+
+const contentPostSchema = z.object({
+  profile_id: z.string().min(1),
+  first: z.number().int().positive().optional(),
+  after_date: z.string().optional(),
+});
+
+const contentActionsSchema = z.object({
+  content_id: z.number().int().positive(),
+  action: z.enum(["confirm", "reject"]),
+  user: z.string().min(1),
+});
 
 export async function contentGet(req: Request): Promise<Response> {
   try {
@@ -36,33 +43,33 @@ export async function contentGet(req: Request): Promise<Response> {
       results: data.groups,
     });
   } catch (error) {
-    console.error("contentGet error:", error);
+    logger.error({ error }, "contentGet failed");
     return serverErr("Failed to fetch content");
   }
 }
 
 export async function contentPost(req: Request): Promise<Response> {
   try {
-    const body = await req.json().catch(() => null);
-    const { profile_id, first, after_date } = body ?? {};
+    const raw = await parseBody(req);
+    const parsed = contentPostSchema.safeParse(raw);
+    if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
 
-    if (!profile_id) return err("profile_id is required");
-
+    const { profile_id, first, after_date } = parsed.data;
     const afterDate = after_date ? new Date(after_date) : undefined;
     const posts = await scrapePosts(profile_id, first, afterDate);
 
     return Response.json({ success: true, ...posts });
   } catch (error) {
-    console.error("contentPost error:", error);
+    logger.error({ error }, "contentPost failed");
     return serverErr("Failed to scrape content");
   }
 }
 
-export async function contentScrape(req: Request): Promise<Response> {
+export async function contentScrape(_req: Request): Promise<Response> {
   if (scrapeLogService.isScraping) {
     return Response.json({ success: false, message: "A scrape is already in progress" }, { status: 409 });
   }
-  console.log("Manual scrape triggered");
+  logger.info("Manual scrape triggered");
   void scrapeAllExternalAccounts();
   return Response.json({
     success: true,
@@ -86,10 +93,7 @@ export async function contentSubmit(req: Request): Promise<Response> {
     if (!region) return err("Group not found or has no regions", 404);
 
     const manualUsername = `manual_upload_${region.id}`;
-    const account = await createManualAccount({
-      username: manualUsername,
-      region_id: region.id,
-    });
+    const account = await createManualAccount({ username: manualUsername, region_id: region.id });
 
     const uploadDir = join(process.cwd(), "storage", "contents");
     await ensureDir(uploadDir);
@@ -100,110 +104,54 @@ export async function contentSubmit(req: Request): Promise<Response> {
         .map(async (file) => {
           const filename = await saveUploadedFile(file, "storage/contents");
           const display_url = `${appConfig.url}/api/instagram/content/file/${filename}`;
-          return saveManualContent({
-            display_url,
-            account_id: account.id,
-            posted_at: new Date(date),
-          });
+          return saveManualContent({ display_url, account_id: account.id, posted_at: new Date(date) });
         }),
     );
 
-    return ok({
-      uploaded_files: contents.length,
-      contents: contents.filter(Boolean),
-    });
+    return ok({ uploaded_files: contents.length, contents: contents.filter(Boolean) });
   } catch (error) {
-    console.error("contentSubmit error:", error);
+    logger.error({ error }, "contentSubmit failed");
     return serverErr("File upload failed");
   }
 }
 
 export async function contentActions(req: Request): Promise<Response> {
   try {
-    const body = await req.json().catch(() => null);
-    const { content_id, action, user } = body ?? {};
+    const raw = await parseBody(req);
+    const parsed = contentActionsSchema.safeParse(raw);
+    if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
 
-    if (!content_id || !action || !user) {
-      return err("content_id, action, and user are required");
-    }
-    if (!["confirm", "reject"].includes(action)) {
-      return err("action must be 'confirm' or 'reject'");
-    }
-
-    const id = Number(content_id);
+    const { content_id, action, user } = parsed.data;
 
     if (action === "reject") {
-      await rejectContent(id);
+      await rejectContent(content_id);
       return Response.json({ success: true, message: "Content rejected" });
     }
 
-    // Confirm immediately — fire Gemini+CDC in background
-    await confirmContent(id, user as string);
-
-    void processInBackground(id).catch(console.error);
-
+    await confirmContent(content_id, user);
+    void processContentInBackground(content_id);
     return Response.json({ success: true, message: "Content confirmed, processing in background" });
   } catch (error) {
-    console.error("contentActions error:", error);
+    logger.error({ error }, "contentActions failed");
     return serverErr("Action failed");
-  }
-}
-
-async function processInBackground(contentId: number): Promise<void> {
-  const tag = `[bg:${contentId}]`;
-  try {
-    console.log(`${tag} fetching content`);
-    const content = await findContentWithRelations(contentId);
-    if (!content) {
-      console.warn(`${tag} content not found, skipping`);
-      wsManager.broadcast({ type: "content_processed", contentId, remoteUrl: null, skipped: true });
-      return;
-    }
-
-    console.log(`${tag} calling Gemini (${geminiConfig.baseUrl})`);
-    const { payload, jobData } = await buildCdcPayload(
-      content.display_url,
-      { id: content.region_id, province_id: content.province_id, js_loker: content.js_loker },
-      content.caption,
-    );
-
-    console.log(`${tag} jobData →`, JSON.stringify(jobData));
-    console.log(`${tag} payload.nama →`, payload.nama);
-    console.log(`${tag} payload →`, JSON.stringify(payload));
-
-    if (!payload.nama) {
-      console.log(`${tag} no company name extracted — skipping CDC`);
-      wsManager.broadcast({ type: "content_processed", contentId, remoteUrl: null, skipped: true, skipReason: "no company name extracted" });
-      return;
-    }
-
-    console.log(`${tag} forwarding to CDC (${payload.nama})`);
-    const remoteUrl = await forwardToCdc(payload);
-    await updateContentRemoteUrl(contentId, remoteUrl);
-    console.log(`${tag} done → ${remoteUrl}`);
-    wsManager.broadcast({ type: "content_processed", contentId, remoteUrl });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    console.error(`${tag} failed:`, message);
-    wsManager.broadcast({ type: "content_processed", contentId, remoteUrl: null, error: message });
   }
 }
 
 export async function contentFileGet(req: Request): Promise<Response> {
   try {
     const url = new URL(req.url);
-    const filename = url.pathname.split("/").pop();
+    const rawName = url.pathname.split("/").pop() ?? "";
+    const filename = basename(rawName);
     if (!filename) return err("Filename required", 400);
 
     const filePath = join(process.cwd(), "storage", "contents", filename);
     const file = Bun.file(filePath);
 
-    if (!(await file.exists())) {
-      return err("File not found", 404);
-    }
+    if (!(await file.exists())) return err("File not found", 404);
 
     return new Response(file);
-  } catch {
+  } catch (error) {
+    logger.error({ error }, "contentFileGet failed");
     return serverErr("Failed to serve file");
   }
 }

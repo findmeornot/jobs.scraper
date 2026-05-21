@@ -1,116 +1,110 @@
+import { z } from "zod";
 import { ok, okResults, err, serverErr } from "@/utils/response";
-import {
-  findAllRegions,
-  findRegionsWithDetails,
-  findRegionById,
-  createRegion,
-  updateRegion,
-  deleteRegion,
-} from "@/repositories/master-region.repo";
-import {
-  findRegionAccountsByRegionId,
-  addAccountToRegion,
-  removeAccountFromRegion,
-} from "@/repositories/region-account.repo";
+import { logger } from "@/utils/logger";
+import { getParams, parseBody } from "@/utils/request";
+import { findAllRegions, findRegionsWithDetails, findRegionById, createRegion, updateRegion, deleteRegion } from "@/repositories/master-region.repo";
+import { findRegionAccountsByRegionId, addAccountToRegion, removeAccountFromRegion } from "@/repositories/region-account.repo";
+
+const regionSchema = z.object({
+  name: z.string().min(1, "name is required"),
+  province_id: z.number().int().positive("province_id is required"),
+  group_id: z.number().int().positive().nullable().optional(),
+  js_loker: z.number().int().positive().nullable().optional(),
+});
+
+const regionAccountAddSchema = z.object({
+  account_id: z.number().int().positive("account_id is required"),
+});
 
 export async function regionGet(req: Request): Promise<Response> {
   try {
-    const url = new URL(req.url);
-    const withDetails = url.searchParams.get("details") === "true";
+    const withDetails = new URL(req.url).searchParams.get("details") === "true";
     const data = withDetails ? await findRegionsWithDetails() : await findAllRegions();
     return okResults(data);
   } catch (error) {
-    console.error("regionGet error:", error);
+    logger.error({ error }, "regionGet failed");
     return serverErr("Failed to fetch regions");
   }
 }
 
 export async function regionPost(req: Request): Promise<Response> {
   try {
-    const body = (await req.json().catch(() => ({}))) as {
-      name?: string;
-      province_id?: number;
-      group_id?: number | null;
-      js_loker?: number | null;
-    };
-    if (!body.name) return err("name is required");
-    if (!body.province_id) return err("province_id is required");
-    const region = await createRegion(body as { name: string; province_id: number; group_id?: number | null; js_loker?: number | null });
+    const raw = await parseBody(req);
+    const parsed = regionSchema.safeParse(raw);
+    if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
+    const region = await createRegion(parsed.data);
     return ok(region);
   } catch (error) {
-    console.error("regionPost error:", error);
+    logger.error({ error }, "regionPost failed");
     return serverErr("Failed to create region");
   }
 }
 
-export async function regionPut(req: Request & { params: { id: string } }): Promise<Response> {
+export async function regionPut(req: Request): Promise<Response> {
   try {
-    const id = Number((req as any).params?.id);
+    const id = Number(getParams(req).id);
     if (!id) return err("id is required");
-    const body = (await req.json().catch(() => ({}))) as {
-      name?: string;
-      province_id?: number;
-      group_id?: number | null;
-      js_loker?: number | null;
-    };
-    await updateRegion(id, body);
+    const raw = await parseBody(req);
+    const parsed = regionSchema.partial().safeParse(raw);
+    if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
+    await updateRegion(id, parsed.data);
     const updated = await findRegionById(id);
     return ok(updated);
   } catch (error) {
-    console.error("regionPut error:", error);
+    logger.error({ error }, "regionPut failed");
     return serverErr("Failed to update region");
   }
 }
 
-export async function regionDelete(req: Request & { params: { id: string } }): Promise<Response> {
+export async function regionDelete(req: Request): Promise<Response> {
   try {
-    const id = Number((req as any).params?.id);
+    const id = Number(getParams(req).id);
     if (!id) return err("id is required");
     await deleteRegion(id);
     return ok({ deleted: true });
   } catch (error) {
-    console.error("regionDelete error:", error);
+    logger.error({ error }, "regionDelete failed");
     return serverErr("Failed to delete region");
   }
 }
 
-export async function regionAccountsGet(req: Request & { params: { id: string } }): Promise<Response> {
+export async function regionAccountsGet(req: Request): Promise<Response> {
   try {
-    const id = Number((req as any).params?.id);
+    const id = Number(getParams(req).id);
     if (!id) return err("id is required");
     const accounts = await findRegionAccountsByRegionId(id);
     return okResults(accounts);
   } catch (error) {
-    console.error("regionAccountsGet error:", error);
+    logger.error({ error }, "regionAccountsGet failed");
     return serverErr("Failed to fetch region accounts");
   }
 }
 
-export async function regionAccountAdd(req: Request & { params: { id: string } }): Promise<Response> {
+export async function regionAccountAdd(req: Request): Promise<Response> {
   try {
-    const regionId = Number((req as any).params?.id);
+    const regionId = Number(getParams(req).id);
     if (!regionId) return err("region id is required");
-    const { account_id } = (await req.json().catch(() => ({}))) as { account_id?: number };
-    if (!account_id) return err("account_id is required");
-    await addAccountToRegion(regionId, account_id);
+    const raw = await parseBody(req);
+    const parsed = regionAccountAddSchema.safeParse(raw);
+    if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
+    await addAccountToRegion(regionId, parsed.data.account_id);
     return ok({ added: true });
   } catch (error) {
-    console.error("regionAccountAdd error:", error);
+    logger.error({ error }, "regionAccountAdd failed");
     return serverErr("Failed to add account to region");
   }
 }
 
-export async function regionAccountRemove(
-  req: Request & { params: { id: string; account_id: string } },
-): Promise<Response> {
+export async function regionAccountRemove(req: Request): Promise<Response> {
   try {
-    const regionId = Number((req as any).params?.id);
-    const accountId = Number((req as any).params?.account_id);
+    const params = getParams(req);
+    const regionId = Number(params.id);
+    const accountId = Number(params.account_id);
     if (!regionId || !accountId) return err("region_id and account_id are required");
     await removeAccountFromRegion(regionId, accountId);
     return ok({ removed: true });
   } catch (error) {
-    console.error("regionAccountRemove error:", error);
+    logger.error({ error }, "regionAccountRemove failed");
     return serverErr("Failed to remove account from region");
   }
 }

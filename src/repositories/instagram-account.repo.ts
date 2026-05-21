@@ -32,41 +32,15 @@ export async function findAllAccounts(filters?: {
   isExternal?: boolean;
   isActive?: boolean;
 }): Promise<(InstagramAccount & { region_count: number })[]> {
-  if (filters?.isExternal !== undefined && filters?.isActive !== undefined) {
-    return db<any[]>`
-      SELECT ia.*, COUNT(ra.id) as region_count
-      FROM instagram_account ia
-      LEFT JOIN region_account ra ON ra.account_id = ia.id
-      WHERE ia.is_external = ${filters.isExternal ? 1 : 0}
-        AND ia.is_active = ${filters.isActive ? 1 : 0}
-      GROUP BY ia.id
-      ORDER BY ia.created_at DESC
-    `;
-  }
-  if (filters?.isExternal !== undefined) {
-    return db<any[]>`
-      SELECT ia.*, COUNT(ra.id) as region_count
-      FROM instagram_account ia
-      LEFT JOIN region_account ra ON ra.account_id = ia.id
-      WHERE ia.is_external = ${filters.isExternal ? 1 : 0}
-      GROUP BY ia.id
-      ORDER BY ia.created_at DESC
-    `;
-  }
-  if (filters?.isActive !== undefined) {
-    return db<any[]>`
-      SELECT ia.*, COUNT(ra.id) as region_count
-      FROM instagram_account ia
-      LEFT JOIN region_account ra ON ra.account_id = ia.id
-      WHERE ia.is_active = ${filters.isActive ? 1 : 0}
-      GROUP BY ia.id
-      ORDER BY ia.created_at DESC
-    `;
-  }
+  const extFilter = filters?.isExternal !== undefined ? (filters.isExternal ? 1 : 0) : null;
+  const activeFilter = filters?.isActive !== undefined ? (filters.isActive ? 1 : 0) : null;
+
   return db<any[]>`
     SELECT ia.*, COUNT(ra.id) as region_count
     FROM instagram_account ia
     LEFT JOIN region_account ra ON ra.account_id = ia.id
+    WHERE (${extFilter} IS NULL OR ia.is_external = ${extFilter})
+      AND (${activeFilter} IS NULL OR ia.is_active = ${activeFilter})
     GROUP BY ia.id
     ORDER BY ia.created_at DESC
   `;
@@ -151,22 +125,14 @@ export async function updateAccount(
   id: number,
   data: Partial<Pick<InstagramAccount, "username" | "is_active" | "is_external" | "instagram_id" | "followers" | "following">>,
 ): Promise<void> {
-  if (data.username !== undefined) {
-    await db`UPDATE instagram_account SET username = ${data.username} WHERE id = ${id}`;
-  }
-  if (data.instagram_id !== undefined) {
-    await db`UPDATE instagram_account SET instagram_id = ${data.instagram_id} WHERE id = ${id}`;
-  }
-  if (data.followers !== undefined) {
-    await db`UPDATE instagram_account SET followers = ${data.followers} WHERE id = ${id}`;
-  }
-  if (data.following !== undefined) {
-    await db`UPDATE instagram_account SET following = ${data.following} WHERE id = ${id}`;
-  }
-  if (data.is_active !== undefined) {
-    await db`UPDATE instagram_account SET is_active = ${data.is_active ? 1 : 0} WHERE id = ${id}`;
-  }
-  if (data.is_external !== undefined) {
-    await db`UPDATE instagram_account SET is_external = ${data.is_external ? 1 : 0} WHERE id = ${id}`;
-  }
+  await db`
+    UPDATE instagram_account SET
+      username     = COALESCE(${data.username ?? null}, username),
+      instagram_id = COALESCE(${data.instagram_id ?? null}, instagram_id),
+      followers    = COALESCE(${data.followers ?? null}, followers),
+      following    = COALESCE(${data.following ?? null}, following),
+      is_active    = COALESCE(${data.is_active !== undefined ? (data.is_active ? 1 : 0) : null}, is_active),
+      is_external  = COALESCE(${data.is_external !== undefined ? (data.is_external ? 1 : 0) : null}, is_external)
+    WHERE id = ${id}
+  `;
 }

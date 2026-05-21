@@ -1,4 +1,5 @@
 import { geminiConfig } from "@/config/gemini";
+import { logger } from "@/utils/logger";
 import { findAllCategories, findCategoriesByIds } from "@/repositories/master-category.repo";
 import type { GeminiJobData } from "@/types/index";
 
@@ -63,7 +64,7 @@ export async function analyzeJobPoster(
 
     return result;
   } catch (error) {
-    console.error("[Gemini] error:", error instanceof Error ? error.message : error);
+    logger.error({ error }, "[Gemini] analysis failed");
     return DEFAULT_RESPONSE;
   }
 }
@@ -77,6 +78,7 @@ async function callGeminiApi(imageUrl: string, prompt: string): Promise<string> 
       "x-origin": geminiConfig.headers["x-origin"],
     },
     body: JSON.stringify({ prompt, image_url: imageUrl }),
+    signal: AbortSignal.timeout(30_000),
   });
 
   if (!response.ok) {

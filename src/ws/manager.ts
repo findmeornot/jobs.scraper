@@ -12,7 +12,11 @@ export const wsManager = {
   broadcast(msg: unknown) {
     const json = JSON.stringify(msg);
     for (const ws of clients) {
-      try { ws.send(json); } catch {}
+      try {
+        ws.send(json);
+      } catch {
+        clients.delete(ws);
+      }
     }
   },
   get size() {

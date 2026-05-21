@@ -48,7 +48,7 @@ export async function buildCdcPayload(
     soft: jobData.soft_skills?.join(",") ?? null,
     hard: jobData.hard_skills?.join(",") ?? null,
     disabilitas: 0,
-    size_img: Math.floor(Math.random() * 500000),
+    size_img: 0,
     img: imgName,
     link_img: displayUrl,
   };

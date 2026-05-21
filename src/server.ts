@@ -34,6 +34,7 @@ import { getDashboardStats } from "@/repositories/instagram-content.repo";
 import { serverErr } from "@/utils/response";
 import { wsManager } from "@/ws/manager";
 import { scrapeLogService } from "@/services/scrape-log.service";
+import { logger } from "@/utils/logger";
 
 // @ts-ignore — Bun HTML import
 import frontendIndex from "../frontend/index.html";
@@ -146,5 +147,5 @@ export function startServer(): void {
     },
   });
 
-  console.log(`✅ Server running on port ${server.port}`);
+  logger.info({ port: server.port }, "Server running");
 }
