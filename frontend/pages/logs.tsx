@@ -95,11 +95,7 @@ export default function Logs() {
           </p>
         </div>
         {!isScraping && (
-          <ScrapeControls
-            isPaused={isPaused}
-            isScraping={isScraping}
-            onTrigger={triggerScrape}
-          />
+          <ScrapeControls isPaused={isPaused} isScraping={isScraping} onTrigger={triggerScrape} />
         )}
       </div>
 
