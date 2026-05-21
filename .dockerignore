@@ -1,0 +1,38 @@
+# Version control
+.git
+.gitignore
+
+# Runtime / local state (mounted as volumes in production)
+states/
+backup/
+
+# Secrets — injected via Dokploy environment variables
+.env
+.env.*
+!.env.example
+
+# Deps reinstalled inside the image
+node_modules/
+
+# Build artifacts
+dist/
+out/
+coverage/
+
+# Editor / OS noise
+.DS_Store
+.idea/
+*.tsbuildinfo
+.eslintcache
+.cache/
+
+# Docker files (no need to copy themselves)
+Dockerfile
+.dockerignore
+
+# Dev/tooling files not needed at runtime
+.prettierrc
+eslint.config.ts
+CLAUDE.md
+README.md
+.claude/
