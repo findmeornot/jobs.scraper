@@ -7,12 +7,20 @@ import {
   saveOrUpdateAccount,
   editAccount,
   removeAccount,
+  importAccounts,
 } from "@/services/instagram-account.service";
 import { resolveInstagramId, syncAccounts, requestSyncStop } from "@/services/instagram-id.service";
 import { findRegionAccountsByAccountId } from "@/repositories/region-account.repo";
 
 const profilePostSchema = z.object({
   usernames: z.array(z.string().min(1)).min(1),
+});
+
+const profileImportSchema = z.object({
+  rows: z
+    .array(z.object({ username: z.string(), type: z.enum(["external", "internal"]) }))
+    .min(1)
+    .max(10_000),
 });
 
 const profilePutSchema = z.object({
@@ -62,6 +70,20 @@ export async function profileSyncIds(req: Request): Promise<Response> {
     logger.error({ error: e }, "profileSyncIds background sync failed"),
   );
   return Response.json({ success: true, message: "Sync started in background" }, { status: 202 });
+}
+
+export async function profileImport(req: Request): Promise<Response> {
+  try {
+    const raw = await parseBody(req);
+    const parsed = profileImportSchema.safeParse(raw);
+    if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
+
+    const result = await importAccounts(parsed.data.rows);
+    return ok(result);
+  } catch (error) {
+    logger.error({ error }, "profileImport failed");
+    return serverErr("Failed to import accounts");
+  }
 }
 
 export function profileSyncStop(): Response {

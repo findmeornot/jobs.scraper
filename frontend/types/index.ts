@@ -117,6 +117,13 @@ export interface ContentProcessedDetail {
 
 export type AccountFilterType = "all" | "external" | "internal";
 
+export interface ImportResult {
+  imported: number;
+  duplicates: number;
+  invalid: number;
+  errors: string[];
+}
+
 export type SyncMode = "all" | "empty";
 
 export interface SyncProgress {

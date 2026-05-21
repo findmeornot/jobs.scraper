@@ -4,6 +4,7 @@ import { authLogin, authLogout, authMe } from "@/routes/auth";
 import {
   profileGet,
   profilePost,
+  profileImport,
   profileSyncIds,
   profileSyncStop,
   profilePut,
@@ -93,6 +94,9 @@ export function startServer(): void {
       "/api/instagram/profile": {
         GET: c(withAuth(profileGet)),
         POST: c(withAuth(profilePost)),
+      },
+      "/api/instagram/profile/import": {
+        POST: c(withAuth(profileImport)),
       },
       "/api/instagram/profile/sync-ids": {
         POST: c(withAuth(profileSyncIds)),

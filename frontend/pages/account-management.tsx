@@ -1,5 +1,15 @@
 import { useState, useMemo } from "react";
-import { Plus, Loader2, Users, RefreshCcw, CheckCircle2, Square, ChevronDown, RotateCcw } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  Users,
+  RefreshCcw,
+  CheckCircle2,
+  Square,
+  ChevronDown,
+  RotateCcw,
+  Upload,
+} from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { AccountManagementSkeleton } from "@/components/ui/skeletons";
 import {
@@ -14,6 +24,7 @@ import {
   useAddRegionToAccount,
   useRemoveRegionFromAccount,
 } from "@/hooks/use-accounts";
+
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useRegionData } from "@/hooks/use-regions";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -28,6 +39,7 @@ import {
   AddAccountDialog,
   EditAccountDialog,
 } from "@/components/features/accounts/account-form-dialog";
+import { ImportDialog } from "@/components/features/accounts/import-dialog";
 import type { Account, SyncMode, SyncProgress } from "@/types";
 import type { AccountFormData, EditAccountFormData } from "@/schemas/account.schema";
 
@@ -50,6 +62,7 @@ export default function AccountManagement() {
   const confirm = useConfirm();
 
   const addDialog = useDisclosure();
+  const importDialog = useDisclosure();
   const editDialog = useDisclosure<Account>();
   const regionsDialog = useDisclosure<Account>();
   const selectorDialog = useDisclosure();
@@ -129,6 +142,10 @@ export default function AccountManagement() {
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => importDialog.open()}>
+              <Upload className="size-4" />
+              Import
+            </Button>
             <SyncControls
               syncProgress={syncProgress}
               onSync={(mode, resume) => syncAccounts.mutate({ mode, resume })}
@@ -172,6 +189,8 @@ export default function AccountManagement() {
           onManageRegions={(account) => regionsDialog.open(account)}
         />
       )}
+
+      <ImportDialog open={importDialog.isOpen} onOpenChange={importDialog.onOpenChange} />
 
       <AddAccountDialog
         open={addDialog.isOpen}
@@ -224,9 +243,7 @@ function SyncControls({ syncProgress, onSync, onStop, isStopping }: SyncControls
       <>
         <Button variant="outline" size="sm" disabled>
           <Loader2 className="size-4 animate-spin" />
-          {syncProgress.total > 0
-            ? `${syncProgress.processed}/${syncProgress.total}`
-            : "Starting…"}
+          {syncProgress.total > 0 ? `${syncProgress.processed}/${syncProgress.total}` : "Starting…"}
         </Button>
         <Button
           variant="destructive"
@@ -254,10 +271,7 @@ function SyncControls({ syncProgress, onSync, onStop, isStopping }: SyncControls
             label={`Resume as-is (${syncProgress.pendingCount} left)`}
             onSelect={() => onSync(syncProgress.mode, true)}
           />
-          <SyncMenuItem
-            label="Resume missing only"
-            onSelect={() => onSync("empty", true)}
-          />
+          <SyncMenuItem label="Resume missing only" onSelect={() => onSync("empty", true)} />
           <div className="my-1 h-px bg-border" />
           <SyncMenuItem label="Fresh — sync all" onSelect={() => onSync("all")} />
           <SyncMenuItem label="Fresh — missing only" onSelect={() => onSync("empty")} />
@@ -268,10 +282,10 @@ function SyncControls({ syncProgress, onSync, onStop, isStopping }: SyncControls
 
   return (
     <Popover>
-      <PopoverTrigger className={buttonVariants({ variant: "outline", size: "sm" })}>
+      <PopoverTrigger className={buttonVariants({ variant: "default", size: "sm" })}>
         <RefreshCcw className="size-4" />
         Sync IDs
-        <ChevronDown className="size-3.5 text-muted-foreground" />
+        <ChevronDown className="size-3.5 text-white!" />
       </PopoverTrigger>
       <PopoverContent className="w-48 gap-0 p-1.5" align="end" side="bottom">
         <SyncMenuItem label="Sync all accounts" onSelect={() => onSync("all")} />

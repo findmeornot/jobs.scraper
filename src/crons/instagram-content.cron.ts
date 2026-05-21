@@ -102,7 +102,7 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
     state.scrape_status = { last_run: now().toISOString(), is_completed: false };
     await saveState(state);
 
-    const afterDate = subtractDays(2);
+    const afterDate = subtractDays(1);
     let totalContent = 0;
     let successCount = 0;
     let errorCount = 0;

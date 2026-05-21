@@ -6,6 +6,7 @@ import {
   findAccountsMissingInstagramId,
   updateAccount,
   deleteAccount as deleteAccountRepo,
+  insertAccountIfNotExists,
 } from "@/repositories/instagram-account.repo";
 import type { InstagramAccount } from "../types";
 import { logger } from "@/utils/logger";
@@ -39,6 +40,50 @@ export async function editAccount(
 
 export async function removeAccount(id: number): Promise<void> {
   await deleteAccountRepo(id);
+}
+
+export interface ImportAccountRow {
+  username: string;
+  type: "external" | "internal";
+}
+
+export interface ImportResult {
+  imported: number;
+  duplicates: number;
+  invalid: number;
+  errors: string[];
+}
+
+export async function importAccounts(rows: ImportAccountRow[]): Promise<ImportResult> {
+  let imported = 0;
+  let duplicates = 0;
+  let invalid = 0;
+  const errors: string[] = [];
+
+  for (const row of rows) {
+    const username = row.username?.trim().replace(/^@/, "").toLowerCase();
+    if (!username) {
+      invalid++;
+      continue;
+    }
+
+    try {
+      const inserted = await insertAccountIfNotExists({
+        username,
+        is_external: row.type === "external",
+      });
+      if (inserted) {
+        imported++;
+      } else {
+        duplicates++;
+      }
+    } catch (err) {
+      invalid++;
+      errors.push(`@${username}: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
+  }
+
+  return { imported, duplicates, invalid, errors };
 }
 
 export async function syncMissingInstagramIds(

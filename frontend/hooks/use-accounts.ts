@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
 import { useScrapeStore } from "@/stores/scrape.store";
-import type { Account, AccountRegion, AccountFilterType, SyncMode } from "@/types";
+import type { Account, AccountRegion, AccountFilterType, SyncMode, ImportResult } from "@/types";
 import type { AccountFormData, EditAccountFormData } from "@/schemas/account.schema";
 
 async function fetchAccounts(filter: AccountFilterType): Promise<Account[]> {
@@ -148,6 +148,20 @@ export function useSyncAccounts() {
     mutate: mutation.mutate,
     isPending: mutation.isPending || syncProgress.running,
   };
+}
+
+export function useImportAccounts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (rows: Array<{ username: string; type: "external" | "internal" }>) =>
+      apiFetch<{ data: ImportResult }>("/api/instagram/profile/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows }),
+      }).then((res) => res.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
+    onError: () => toast.error("Import failed", "Could not import accounts."),
+  });
 }
 
 export function useStopSync() {

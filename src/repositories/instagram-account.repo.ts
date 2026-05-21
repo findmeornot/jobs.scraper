@@ -120,6 +120,19 @@ export async function deleteAccount(id: number): Promise<void> {
   await db`DELETE FROM instagram_account WHERE id = ${id}`;
 }
 
+export async function insertAccountIfNotExists(data: {
+  username: string;
+  is_external: boolean;
+}): Promise<boolean> {
+  const rows = await db<Array<{ id: number }>>`
+    INSERT INTO instagram_account (username, is_external, is_active)
+    VALUES (${data.username}, ${data.is_external ? 1 : 0}, 1)
+    ON CONFLICT (username) DO NOTHING
+    RETURNING id
+  `;
+  return rows.length > 0;
+}
+
 export async function updateAccount(
   id: number,
   data: Partial<
