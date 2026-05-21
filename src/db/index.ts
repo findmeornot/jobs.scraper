@@ -8,4 +8,5 @@ export const db = new SQL({
   password: process.env.DB_PASSWORD ?? "",
   adapter: "mysql",
   tls: false,
+  allowPublicKeyRetrieval: true,
 });
