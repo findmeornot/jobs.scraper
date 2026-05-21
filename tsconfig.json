@@ -28,6 +28,11 @@
       "@/components/*": ["./frontend/components/*"],
       "@/lib/*": ["./frontend/lib/*"],
       "@/hooks/*": ["./frontend/hooks/*"],
+      "@/stores/*": ["./frontend/stores/*"],
+      "@/schemas/*": ["./frontend/schemas/*"],
+      "@/types": ["./frontend/types/index"],
+      "@/types/*": ["./frontend/types/*"],
+      "@/pages/*": ["./frontend/pages/*"],
     },
 
     // Some stricter flags (disabled by default)

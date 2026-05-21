@@ -1,136 +1,114 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
-import dayjs from "dayjs";
+import type { ContentGroup, ContentItem } from "@/types";
 
-export interface ContentItem {
-  id: number;
-  instagram_id: number | null;
-  username: string;
-  display_url: string;
-  caption: string | null;
-  shortcode: string | null;
-  posted_at: string | null;
-  confirmed_at: string | null;
-  remote_url: string | null;
-  action_by: string | null;
-  content_created_at: string;
-  group_id: number;
-  group_name: string;
-  region_id: number;
-  region_name: string;
-  account_id: number;
-  // client-only fields populated from WebSocket events
-  processingDone?: boolean;
-  processingError?: string;
-  skipReason?: string;
+async function fetchContent(date: string, showPendingOnly: boolean): Promise<ContentGroup[]> {
+  const params = new URLSearchParams({ date });
+  if (showPendingOnly) params.set("show_unverified_only", "true");
+  const data = await apiFetch<{ results: ContentGroup[] }>(`/api/instagram/content?${params}`);
+  const groups: ContentGroup[] = data.results ?? [];
+  return groups.map((g) => ({
+    ...g,
+    content: g.content.map((c) => ({
+      ...c,
+      processingDone: c.confirmed_at !== null,
+    })),
+  }));
 }
 
-export interface ContentGroup {
-  id: number;
-  name: string;
-  content_count: number;
-  content: ContentItem[];
+export function useContent(date: string, showPendingOnly: boolean) {
+  return useQuery({
+    queryKey: ["content", date, showPendingOnly],
+    queryFn: () => fetchContent(date, showPendingOnly),
+    meta: { onError: () => toast.error("Failed to load content") },
+  });
 }
 
-export function useContent() {
-  const [groups, setGroups] = useState<ContentGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [date, setDate] = useState<string>(dayjs().format("YYYY-MM-DD"));
-  const [pendingOnly, setPendingOnly] = useState(true);
-  const [tick, setTick] = useState(0);
-
-  const refetch = useCallback(() => setTick((n) => n + 1), []);
-
-  useEffect(() => {
-    setLoading(true);
-    const params = new URLSearchParams({ date });
-    if (pendingOnly) params.set("show_unverified_only", "true");
-
-    fetch(`/api/instagram/content?${params}`)
-      .then((r) => r.json())
-      .then((d) => {
-        const groups: ContentGroup[] = d.results ?? [];
-        // Items already in DB are past the processing window — mark done
-        // so they never show the infinite "Processing…" spinner
-        setGroups(groups.map((g) => ({
-          ...g,
-          content: g.content.map((c) => ({
-            ...c,
-            processingDone: c.confirmed_at !== null,
-          })),
-        })));
-      })
-      .catch(() => toast.error("Failed to load content"))
-      .finally(() => setLoading(false));
-  }, [date, pendingOnly, tick]);
-
-  function optimisticConfirm(id: number, reviewer: string) {
-    setGroups((prev) =>
-      prev.map((g) => ({
-        ...g,
-        content: g.content.map((c) =>
-          c.id === id
-            ? { ...c, confirmed_at: new Date().toISOString(), action_by: reviewer, processingDone: false, processingError: undefined }
-            : c,
-        ),
-      })),
-    );
-  }
-
-  function optimisticReject(id: number) {
-    setGroups((prev) =>
-      prev.map((g) => ({
-        ...g,
-        content: g.content.filter((c) => c.id !== id),
-        content_count: g.content.some((c) => c.id === id) ? g.content_count - 1 : g.content_count,
-      })),
-    );
-  }
-
-  async function confirmItem(id: number, reviewer: string): Promise<boolean> {
-    optimisticConfirm(id, reviewer);
-    try {
-      const r = await fetch("/api/instagram/content/actions", {
+export function useConfirmContent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reviewer }: { id: number; reviewer: string }) =>
+      apiFetch("/api/instagram/content/actions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content_id: id, action: "confirm", user: reviewer }),
-      });
-      if (!r.ok) throw new Error();
-      return true;
-    } catch {
-      toast.error("Failed to confirm");
-      refetch(); // revert optimistic update on failure
-      return false;
-    }
-  }
+      }),
+    onMutate: async ({ id, reviewer }) => {
+      const keys = qc.getQueriesData<ContentGroup[]>({ queryKey: ["content"] });
+      const snapshots = keys.map(([key, data]) => ({ key, data }));
 
-  async function rejectItem(id: number): Promise<boolean> {
-    optimisticReject(id);
-    try {
-      const r = await fetch("/api/instagram/content/actions", {
+      for (const [key, prev] of keys) {
+        qc.setQueryData<ContentGroup[]>(key, (groups) =>
+          groups?.map((g) => ({
+            ...g,
+            content: g.content.map((c) =>
+              c.id === id
+                ? { ...c, confirmed_at: new Date().toISOString(), action_by: reviewer, processingDone: false, processingError: undefined }
+                : c,
+            ),
+          })),
+        );
+      }
+
+      return { snapshots };
+    },
+    onError: (_err, _vars, ctx) => {
+      toast.error("Failed to confirm");
+      for (const { key, data } of ctx?.snapshots ?? []) {
+        qc.setQueryData(key, data);
+      }
+    },
+  });
+}
+
+export function useRejectContent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiFetch("/api/instagram/content/actions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content_id: id, action: "reject", user: "system" }),
-      });
-      if (!r.ok) throw new Error();
-      return true;
-    } catch {
+      }),
+    onMutate: async (id) => {
+      const keys = qc.getQueriesData<ContentGroup[]>({ queryKey: ["content"] });
+      const snapshots = keys.map(([key, data]) => ({ key, data }));
+
+      for (const [key] of keys) {
+        qc.setQueryData<ContentGroup[]>(key, (groups) =>
+          groups?.map((g) => ({
+            ...g,
+            content: g.content.filter((c) => c.id !== id),
+            content_count: g.content.some((c) => c.id === id) ? g.content_count - 1 : g.content_count,
+          })),
+        );
+      }
+
+      return { snapshots };
+    },
+    onError: (_err, _vars, ctx) => {
       toast.error("Failed to reject");
-      refetch();
-      return false;
-    }
-  }
+      for (const { key, data } of ctx?.snapshots ?? []) {
+        qc.setQueryData(key, data);
+      }
+    },
+  });
+}
 
-  const allContent = groups.flatMap((g) => g.content);
-  const totalItems = allContent.length;
-  const confirmedItems = allContent.filter((c) => c.confirmed_at !== null).length;
-  const pendingItems = totalItems - confirmedItems;
-
-  const applyContentUpdate = useCallback((contentId: number, remoteUrl: string | null, error?: string, skipReason?: string) => {
-    setGroups((prev) =>
-      prev.map((g) => ({
+export function applyContentUpdate(
+  qc: ReturnType<typeof useQueryClient>,
+  contentId: number,
+  remoteUrl: string | null,
+  error?: string,
+  skipReason?: string,
+) {
+  const keys = qc.getQueriesData<ContentGroup[]>({ queryKey: ["content"] });
+  for (const [key] of keys) {
+    qc.setQueryData<ContentGroup[]>(key, (groups) =>
+      groups?.map((g) => ({
         ...g,
-        content: g.content.map((c) =>
+        content: g.content.map((c): ContentItem =>
           c.id === contentId
             ? {
                 ...c,
@@ -143,21 +121,5 @@ export function useContent() {
         ),
       })),
     );
-  }, []);
-
-  return {
-    groups,
-    loading,
-    date,
-    setDate,
-    pendingOnly,
-    setPendingOnly,
-    refetch,
-    confirmItem,
-    rejectItem,
-    applyContentUpdate,
-    totalItems,
-    confirmedItems,
-    pendingItems,
-  };
+  }
 }

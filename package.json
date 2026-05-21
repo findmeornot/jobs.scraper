@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
+    "@hookform/resolvers": "^5.2.2",
+    "@tanstack/react-query": "^5.100.11",
     "@tanstack/react-table": "^8.21.3",
     "bun-plugin-tailwind": "^0.1.2",
     "class-variance-authority": "^0.7.1",
@@ -23,11 +25,14 @@
     "puppeteer": "^23.9.0",
     "react": "^19",
     "react-dom": "^19",
+    "react-hook-form": "^7.76.0",
     "react-router-dom": "^7.15.1",
     "recharts": "3.8.0",
     "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.1.11",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@types/bun": "latest",

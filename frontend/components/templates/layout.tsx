@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, Users, Map, Pickaxe, ScrollText, ImagePlay } from "lucide-react";
-import { useScrapeStatus } from "@/hooks/use-scrape-status";
+import { useScrapeStore } from "@/stores/scrape.store";
 import {
   Sidebar,
   SidebarContent,
@@ -40,7 +40,58 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { isScraping } = useScrapeStatus();
+  const isScraping = useScrapeStore((s) => s.isScraping);
+  const { setScrapeState, appendLog, dispatchContentProcessed } = useScrapeStore();
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const connect = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const ws = new WebSocket(`${protocol}://${window.location.host}/ws`);
+    wsRef.current = ws;
+
+    ws.onopen = () => setScrapeState({ connected: true });
+
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data as string);
+        if (msg.type === "state") {
+          setScrapeState({
+            isScraping: msg.isScraping,
+            isPaused: msg.isPaused ?? false,
+            sessionId: msg.sessionId,
+          });
+        } else if (msg.type === "log") {
+          appendLog(msg.entry);
+        } else if (msg.type === "content_processed") {
+          dispatchContentProcessed({
+            contentId: msg.contentId,
+            remoteUrl: msg.remoteUrl ?? null,
+            skipReason: msg.skipReason,
+            error: msg.error,
+          });
+        }
+      } catch {}
+    };
+
+    ws.onclose = () => {
+      setScrapeState({ connected: false });
+      reconnectTimer.current = setTimeout(connect, 3000);
+    };
+
+    ws.onerror = () => ws.close();
+  }, [setScrapeState, appendLog, dispatchContentProcessed]);
+
+  useEffect(() => {
+    connect();
+    return () => {
+      clearTimeout(reconnectTimer.current!);
+      wsRef.current?.close();
+    };
+  }, [connect]);
 
   function isActive(path: string) {
     return path === "/" ? pathname === "/" : pathname.startsWith(path);
@@ -54,7 +105,7 @@ export default function Layout({ children }: LayoutProps) {
         <Sidebar collapsible="icon" variant="inset">
           <SidebarHeader>
             <div className="flex items-center gap-2 px-2 py-1">
-              <Pickaxe className="shrink-0"/>
+              <Pickaxe className="shrink-0" />
               <div className="grid flex-1 text-left text-xs leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-semibold text-sidebar-foreground">
                   Instagram Scraper

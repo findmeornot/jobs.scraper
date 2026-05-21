@@ -1,23 +1,25 @@
+import { useMutation } from "@tanstack/react-query";
+import { apiFetch, ApiError } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
-import { useScrapeStatus } from "@/hooks/use-scrape-status";
+import { useScrapeStore } from "@/stores/scrape.store";
 
 export function useScrape() {
-  const { isScraping } = useScrapeStatus();
+  const isScraping = useScrapeStore((s) => s.isScraping);
 
-  async function triggerScrape() {
-    if (isScraping) return;
-    try {
-      const r = await fetch("/api/instagram/content/scrape", { method: "POST" });
-      if (r.status === 409) {
+  const trigger = useMutation({
+    mutationFn: () => apiFetch("/api/instagram/content/scrape", { method: "POST" }),
+    onSuccess: () => toast.success("Scraping started!", "Real-time logs available on the Logs page."),
+    onError: (err) => {
+      if (err instanceof ApiError && err.status === 409) {
         toast.error("Already running", "A scrape is already in progress.");
-        return;
+      } else {
+        toast.error("Failed to start scraping", "Please try again.");
       }
-      if (!r.ok) throw new Error("Failed");
-      toast.success("Scraping started!", "Real-time logs available on the Logs page.");
-    } catch {
-      toast.error("Failed to start scraping", "Please try again.");
-    }
-  }
+    },
+  });
 
-  return { isScraping, triggerScrape };
+  return {
+    isScraping,
+    triggerScrape: () => { if (!isScraping) trigger.mutate(); },
+  };
 }
