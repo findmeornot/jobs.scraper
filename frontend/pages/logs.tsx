@@ -94,7 +94,6 @@ export default function Logs() {
             Historical scrape runs and real-time activity
           </p>
         </div>
-        <ScrapeControls isPaused={isPaused} isScraping={isScraping} onTrigger={triggerScrape} />
       </div>
 
       {isScraping && (
