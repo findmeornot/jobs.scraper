@@ -9,6 +9,10 @@ const INITIAL_SYNC_PROGRESS: SyncProgress = {
   processed: 0,
   failed: 0,
   current: null,
+  stopRequested: false,
+  mode: "all",
+  canResume: false,
+  pendingCount: 0,
 };
 
 interface ScrapeState {

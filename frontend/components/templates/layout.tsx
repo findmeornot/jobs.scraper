@@ -95,6 +95,10 @@ export default function Layout({ children }: LayoutProps) {
             processed: msg.processed,
             failed: msg.failed,
             current: msg.current ?? null,
+            stopRequested: msg.stopRequested ?? false,
+            mode: msg.mode ?? "all",
+            canResume: msg.canResume ?? false,
+            pendingCount: msg.pendingCount ?? 0,
           });
         }
       } catch {}

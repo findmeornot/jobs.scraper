@@ -37,6 +37,10 @@ const INITIAL_SYNC_PROGRESS: SyncProgress = {
   processed: 0,
   failed: 0,
   current: null,
+  stopRequested: false,
+  mode: "all",
+  canResume: false,
+  pendingCount: 0,
 };
 
 interface ScrapeStatusState {
@@ -120,6 +124,10 @@ export function ScrapeStatusProvider({ children }: { children: ReactNode }) {
               processed: msg.processed,
               failed: msg.failed,
               current: msg.current ?? null,
+              stopRequested: msg.stopRequested ?? false,
+              mode: msg.mode ?? "all",
+              canResume: msg.canResume ?? false,
+              pendingCount: msg.pendingCount ?? 0,
             },
           }));
         }

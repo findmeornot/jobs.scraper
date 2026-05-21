@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { Plus, Loader2, Users, RefreshCcw, CheckCircle2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Plus, Loader2, Users, RefreshCcw, CheckCircle2, Square, ChevronDown, RotateCcw } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { AccountManagementSkeleton } from "@/components/ui/skeletons";
 import {
   useAccounts,
@@ -9,10 +9,12 @@ import {
   useEditAccount,
   useDeleteAccount,
   useSyncAccountId,
-  useSyncAllIds,
+  useSyncAccounts,
+  useStopSync,
   useAddRegionToAccount,
   useRemoveRegionFromAccount,
 } from "@/hooks/use-accounts";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useRegionData } from "@/hooks/use-regions";
 import { useConfirm } from "@/hooks/use-confirm";
 import { useScrapeStore } from "@/stores/scrape.store";
@@ -26,7 +28,7 @@ import {
   AddAccountDialog,
   EditAccountDialog,
 } from "@/components/features/accounts/account-form-dialog";
-import type { Account, SyncProgress } from "@/types";
+import type { Account, SyncMode, SyncProgress } from "@/types";
 import type { AccountFormData, EditAccountFormData } from "@/schemas/account.schema";
 
 type FilterType = "all" | "external" | "internal";
@@ -41,7 +43,8 @@ export default function AccountManagement() {
   const editAccount = useEditAccount();
   const deleteAccount = useDeleteAccount();
   const syncId = useSyncAccountId();
-  const syncAll = useSyncAllIds();
+  const syncAccounts = useSyncAccounts();
+  const stopSync = useStopSync();
   const addRegion = useAddRegionToAccount();
   const removeRegion = useRemoveRegionFromAccount();
   const confirm = useConfirm();
@@ -64,17 +67,6 @@ export default function AccountManagement() {
     () => (regionData?.regions ?? []).filter((r) => !assignedRegionIds.has(r.id)),
     [regionData?.regions, assignedRegionIds],
   );
-
-  async function handleSyncAll() {
-    const ok = await confirm({
-      title: "Sync all Instagram IDs?",
-      description:
-        "All accounts will be re-synced. Accounts that cannot be resolved will be permanently deleted.",
-      confirmLabel: "Sync & Delete unresolvable",
-      variant: "destructive",
-    });
-    if (ok) syncAll.mutate();
-  }
 
   async function handleSyncRow(username: string) {
     setSyncingRows((prev) => new Set(prev).add(username));
@@ -137,21 +129,12 @@ export default function AccountManagement() {
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleSyncAll} disabled={syncAll.isPending}>
-              {syncProgress.running ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  {syncProgress.total > 0
-                    ? `${syncProgress.processed}/${syncProgress.total}`
-                    : "Starting…"}
-                </>
-              ) : (
-                <>
-                  <RefreshCcw className="size-4" />
-                  Sync All IDs
-                </>
-              )}
-            </Button>
+            <SyncControls
+              syncProgress={syncProgress}
+              onSync={(mode, resume) => syncAccounts.mutate({ mode, resume })}
+              onStop={() => stopSync.mutate()}
+              isStopping={stopSync.isPending}
+            />
             <Button onClick={() => addDialog.open()} size="sm">
               <Plus className="size-4" />
               Add Account
@@ -228,6 +211,87 @@ export default function AccountManagement() {
   );
 }
 
+interface SyncControlsProps {
+  syncProgress: SyncProgress;
+  onSync: (mode: SyncMode, resume?: boolean) => void;
+  onStop: () => void;
+  isStopping: boolean;
+}
+
+function SyncControls({ syncProgress, onSync, onStop, isStopping }: SyncControlsProps) {
+  if (syncProgress.running) {
+    return (
+      <>
+        <Button variant="outline" size="sm" disabled>
+          <Loader2 className="size-4 animate-spin" />
+          {syncProgress.total > 0
+            ? `${syncProgress.processed}/${syncProgress.total}`
+            : "Starting…"}
+        </Button>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={onStop}
+          disabled={isStopping || syncProgress.stopRequested}
+        >
+          <Square className="size-3.5 fill-current" />
+          {syncProgress.stopRequested ? "Stopping…" : "Stop"}
+        </Button>
+      </>
+    );
+  }
+
+  if (syncProgress.canResume) {
+    return (
+      <Popover>
+        <PopoverTrigger className={buttonVariants({ variant: "outline", size: "sm" })}>
+          <RotateCcw className="size-4" />
+          Resume
+          <ChevronDown className="size-3.5 text-muted-foreground" />
+        </PopoverTrigger>
+        <PopoverContent className="w-52 gap-0 p-1.5" align="end" side="bottom">
+          <SyncMenuItem
+            label={`Resume as-is (${syncProgress.pendingCount} left)`}
+            onSelect={() => onSync(syncProgress.mode, true)}
+          />
+          <SyncMenuItem
+            label="Resume missing only"
+            onSelect={() => onSync("empty", true)}
+          />
+          <div className="my-1 h-px bg-border" />
+          <SyncMenuItem label="Fresh — sync all" onSelect={() => onSync("all")} />
+          <SyncMenuItem label="Fresh — missing only" onSelect={() => onSync("empty")} />
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger className={buttonVariants({ variant: "outline", size: "sm" })}>
+        <RefreshCcw className="size-4" />
+        Sync IDs
+        <ChevronDown className="size-3.5 text-muted-foreground" />
+      </PopoverTrigger>
+      <PopoverContent className="w-48 gap-0 p-1.5" align="end" side="bottom">
+        <SyncMenuItem label="Sync all accounts" onSelect={() => onSync("all")} />
+        <SyncMenuItem label="Sync missing only" onSelect={() => onSync("empty")} />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function SyncMenuItem({ label, onSelect }: { label: string; onSelect: () => void }) {
+  return (
+    <button
+      onClick={onSelect}
+      className="w-full rounded px-2.5 py-1.5 text-left text-sm hover:bg-muted transition-colors"
+    >
+      {label}
+    </button>
+  );
+}
+
 function SyncStatusBadge({ syncProgress }: { syncProgress: SyncProgress }) {
   if (syncProgress.total === 0) return null;
 
@@ -235,9 +299,16 @@ function SyncStatusBadge({ syncProgress }: { syncProgress: SyncProgress }) {
     return (
       <p className="text-xs text-muted-foreground flex items-center gap-1.5">
         <Loader2 className="size-3 animate-spin" />
-        {syncProgress.current
-          ? `Syncing @${syncProgress.current}`
-          : "Preparing…"}
+        {syncProgress.current ? `Syncing @${syncProgress.current}` : "Preparing…"}
+      </p>
+    );
+  }
+
+  if (syncProgress.canResume) {
+    return (
+      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+        <Square className="size-3 fill-current text-orange-400" />
+        Stopped — {syncProgress.processed} done, {syncProgress.pendingCount} remaining
       </p>
     );
   }

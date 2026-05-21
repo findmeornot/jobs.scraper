@@ -5,6 +5,7 @@ import {
   profileGet,
   profilePost,
   profileSyncIds,
+  profileSyncStop,
   profilePut,
   profileDelete,
   profileAccountRegions,
@@ -95,6 +96,9 @@ export function startServer(): void {
       },
       "/api/instagram/profile/sync-ids": {
         POST: c(withAuth(profileSyncIds)),
+      },
+      "/api/instagram/profile/sync-ids/stop": {
+        POST: c(withAuth(profileSyncStop)),
       },
       "/api/instagram/profile/:id": {
         PUT: c(withAuth(profilePut)),

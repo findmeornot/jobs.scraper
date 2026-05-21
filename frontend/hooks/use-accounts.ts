@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
 import { useScrapeStore } from "@/stores/scrape.store";
-import type { Account, AccountRegion, AccountFilterType } from "@/types";
+import type { Account, AccountRegion, AccountFilterType, SyncMode } from "@/types";
 import type { AccountFormData, EditAccountFormData } from "@/schemas/account.schema";
 
 async function fetchAccounts(filter: AccountFilterType): Promise<Account[]> {
@@ -104,7 +104,7 @@ export function useSyncAccountId() {
   });
 }
 
-export function useSyncAllIds() {
+export function useSyncAccounts() {
   const qc = useQueryClient();
   const syncProgress = useScrapeStore((s) => s.syncProgress);
   const prevRunning = useRef(false);
@@ -113,24 +113,48 @@ export function useSyncAllIds() {
     const wasRunning = prevRunning.current;
     prevRunning.current = syncProgress.running;
 
-    if (wasRunning && !syncProgress.running && syncProgress.total > 0) {
-      qc.invalidateQueries({ queryKey: ["accounts"] });
+    if (!wasRunning || syncProgress.running) return;
+
+    qc.invalidateQueries({ queryKey: ["accounts"] });
+
+    if (syncProgress.canResume) {
+      toast.info("Sync paused", `${syncProgress.pendingCount} accounts remaining`);
+    } else if (syncProgress.total === 0) {
+      toast.info("Nothing to sync", "All accounts already have Instagram IDs.");
+    } else {
       toast.success(
         "Sync complete",
-        `${syncProgress.processed}/${syncProgress.total} synced, ${syncProgress.failed} deleted`,
+        `${syncProgress.processed}/${syncProgress.total} resolved, ${syncProgress.failed} deleted`,
       );
     }
   }, [syncProgress, qc]);
 
   const mutation = useMutation({
-    mutationFn: () => apiFetch("/api/instagram/profile/sync-ids", { method: "POST" }),
-    onError: () => toast.error("Sync failed", "Could not start ID sync."),
+    mutationFn: (options: { mode: SyncMode; resume?: boolean }) =>
+      apiFetch("/api/instagram/profile/sync-ids", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(options),
+      }),
+    onSuccess: (_data, options) => {
+      const label = options.resume ? "Sync resumed" : "Sync started";
+      const desc = options.mode === "empty" ? "Syncing accounts with missing IDs…" : "Syncing all accounts…";
+      toast.info(label, desc);
+    },
+    onError: () => toast.error("Sync failed", "Could not start sync."),
   });
 
   return {
     mutate: mutation.mutate,
     isPending: mutation.isPending || syncProgress.running,
   };
+}
+
+export function useStopSync() {
+  return useMutation({
+    mutationFn: () => apiFetch("/api/instagram/profile/sync-ids/stop", { method: "POST" }),
+    onError: () => toast.error("Stop failed", "Could not stop sync."),
+  });
 }
 
 export function useAddRegionToAccount() {

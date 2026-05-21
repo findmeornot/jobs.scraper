@@ -117,10 +117,16 @@ export interface ContentProcessedDetail {
 
 export type AccountFilterType = "all" | "external" | "internal";
 
+export type SyncMode = "all" | "empty";
+
 export interface SyncProgress {
   running: boolean;
   total: number;
   processed: number;
   failed: number;
   current: string | null;
+  stopRequested: boolean;
+  mode: SyncMode;
+  canResume: boolean;
+  pendingCount: number;
 }

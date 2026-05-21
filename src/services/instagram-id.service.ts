@@ -2,11 +2,14 @@ import { instagramConfig } from "@/config/instagram";
 import { puppeteerProfileId } from "@/scraper/puppeteer";
 import {
   findAllAccounts,
+  findAccountsMissingInstagramId,
   upsertAccount,
   deleteAccount,
 } from "@/repositories/instagram-account.repo";
 import { wsManager } from "@/ws/manager";
 import { logger } from "@/utils/logger";
+
+export type SyncMode = "all" | "empty";
 
 interface SyncState {
   running: boolean;
@@ -14,16 +17,53 @@ interface SyncState {
   processed: number;
   failed: number;
   current: string | null;
+  stopRequested: boolean;
+  mode: SyncMode;
+  canResume: boolean;
+  pendingCount: number;
 }
 
-let syncState: SyncState = { running: false, total: 0, processed: 0, failed: 0, current: null };
+type SyncAccount = { id: number; username: string; instagram_id: string | null };
+
+let syncState: SyncState = {
+  running: false,
+  total: 0,
+  processed: 0,
+  failed: 0,
+  current: null,
+  stopRequested: false,
+  mode: "all",
+  canResume: false,
+  pendingCount: 0,
+};
+
+let pendingAccounts: SyncAccount[] = [];
+let _stopRequested = false;
+let _syncController: AbortController | null = null;
 
 export function getSyncState(): SyncState {
   return { ...syncState };
 }
 
+export function requestSyncStop(): void {
+  if (!syncState.running) return;
+  _stopRequested = true;
+  _syncController?.abort();
+  syncState = { ...syncState, stopRequested: true };
+  broadcastSyncProgress();
+}
+
 function broadcastSyncProgress() {
   wsManager.broadcast({ type: "sync_progress", ...syncState });
+}
+
+async function stopAwareDelay(ms: number): Promise<void> {
+  const step = 200;
+  let remaining = ms;
+  while (remaining > 0 && !_stopRequested) {
+    await new Promise<void>((r) => setTimeout(r, Math.min(step, remaining)));
+    remaining -= step;
+  }
 }
 
 const WEB_UA =
@@ -70,7 +110,7 @@ interface ResolvedId {
 }
 
 /** Strategy 1 — Instagram web_profile_info API (fastest, no auth needed) */
-async function resolveViaWebApi(username: string): Promise<ResolvedId> {
+async function resolveViaWebApi(username: string, signal?: AbortSignal): Promise<ResolvedId> {
   const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`;
 
   const res = await fetch(url, {
@@ -82,7 +122,7 @@ async function resolveViaWebApi(username: string): Promise<ResolvedId> {
       Referer: `https://www.instagram.com/${username}/`,
       "X-Requested-With": "XMLHttpRequest",
     },
-    signal: AbortSignal.timeout(10_000),
+    signal: signal ?? AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) throw new Error(`web_profile_info returned HTTP ${res.status}`);
@@ -111,10 +151,10 @@ async function resolveViaWebApi(username: string): Promise<ResolvedId> {
 }
 
 /** Strategy 2 — Extract ID from raw profile HTML (multiple regex patterns) */
-async function resolveViaHtmlParse(username: string): Promise<ResolvedId> {
+async function resolveViaHtmlParse(username: string, signal?: AbortSignal): Promise<ResolvedId> {
   const res = await fetch(`${instagramConfig.baseUrl}/${username}/`, {
     headers: { "User-Agent": WEB_UA },
-    signal: AbortSignal.timeout(15_000),
+    signal: signal ?? AbortSignal.timeout(15_000),
   });
 
   if (!res.ok) throw new Error(`Profile page returned HTTP ${res.status}`);
@@ -158,10 +198,10 @@ async function resolveViaPuppeteer(username: string): Promise<ResolvedId> {
  * Resolves the Instagram numeric user ID for a given username.
  * Tries three strategies in order: web API → HTML parse → Puppeteer.
  */
-export async function resolveInstagramId(username: string): Promise<ResolvedId> {
+export async function resolveInstagramId(username: string, signal?: AbortSignal): Promise<ResolvedId> {
   const strategies = [
-    { name: "web_profile_info API", fn: () => resolveViaWebApi(username) },
-    { name: "HTML parse", fn: () => resolveViaHtmlParse(username) },
+    { name: "web_profile_info API", fn: () => resolveViaWebApi(username, signal) },
+    { name: "HTML parse", fn: () => resolveViaHtmlParse(username, signal) },
     { name: "Puppeteer", fn: () => resolveViaPuppeteer(username) },
   ];
 
@@ -173,6 +213,7 @@ export async function resolveInstagramId(username: string): Promise<ResolvedId> 
       logger.info({ username, id: result.id, strategy: name }, "Instagram ID resolved");
       return result;
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") throw err;
       logger.warn(
         { username, strategy: name, error: err instanceof Error ? err.message : err },
         "Strategy failed",
@@ -188,57 +229,103 @@ export async function resolveInstagramId(username: string): Promise<ResolvedId> 
   );
 }
 
-/**
- * Syncs Instagram IDs for ALL accounts.
- * Accounts that cannot be resolved by any strategy are deleted.
- */
-export async function syncMissingIds(): Promise<{
-  processed: number;
-  deleted: number;
-  failed: string[];
-}> {
+export async function syncAccounts(options: {
+  mode: SyncMode;
+  resume?: boolean;
+}): Promise<{ processed: number; deleted: number; failed: string[] }> {
   if (syncState.running) {
     logger.warn("Sync already in progress — skipping");
     return { processed: 0, deleted: 0, failed: [] };
   }
 
-  const accounts = await findAllAccounts();
+  _stopRequested = false;
+  _syncController = new AbortController();
+  const signal = _syncController.signal;
   const failed: string[] = [];
 
-  syncState = { running: true, total: accounts.length, processed: 0, failed: 0, current: null };
+  let accounts: SyncAccount[];
+  if (options.resume && pendingAccounts.length > 0) {
+    accounts =
+      options.mode === "empty"
+        ? pendingAccounts.filter((a) => a.instagram_id === null)
+        : [...pendingAccounts];
+  } else {
+    accounts =
+      options.mode === "all"
+        ? await findAllAccounts()
+        : await findAccountsMissingInstagramId();
+  }
+  pendingAccounts = [];
+
+  syncState = {
+    running: true,
+    total: accounts.length,
+    processed: 0,
+    failed: 0,
+    current: null,
+    stopRequested: false,
+    mode: options.mode,
+    canResume: false,
+    pendingCount: 0,
+  };
   broadcastSyncProgress();
-  logger.info({ count: accounts.length }, "Syncing all accounts");
+  logger.info({ count: accounts.length, mode: options.mode, resume: options.resume ?? false }, "Sync started");
+
+  let stopped = false;
 
   try {
-    for (const account of accounts) {
+    for (const [i, account] of accounts.entries()) {
+      if (_stopRequested) {
+        pendingAccounts = accounts.slice(i);
+        stopped = true;
+        break;
+      }
+
       syncState.current = account.username;
       broadcastSyncProgress();
 
+      let aborted = false;
       try {
-        const { id } = await resolveInstagramId(account.username);
+        const { id } = await resolveInstagramId(account.username, signal);
         await upsertAccount({ instagram_id: id, username: account.username, followers: 0, following: 0 });
         syncState.processed++;
         broadcastSyncProgress();
-        await new Promise((r) => setTimeout(r, 2_000));
       } catch (err) {
-        const msg = `@${account.username}: ${err instanceof Error ? err.message : "Unknown error"}`;
-        logger.error({ username: account.username }, `All strategies failed — deleting — ${msg}`);
-        failed.push(msg);
-        syncState.failed++;
-        broadcastSyncProgress();
-        try {
-          await deleteAccount(account.id);
-        } catch (delErr) {
-          logger.error({ username: account.username, error: delErr }, "Could not delete account");
+        if (err instanceof Error && err.name === "AbortError") {
+          aborted = true;
+        } else {
+          const msg = `@${account.username}: ${err instanceof Error ? err.message : "Unknown error"}`;
+          logger.error({ username: account.username }, `All strategies failed — deleting — ${msg}`);
+          failed.push(msg);
+          syncState.failed++;
+          broadcastSyncProgress();
+          try {
+            await deleteAccount(account.id);
+          } catch (delErr) {
+            logger.error({ username: account.username, error: delErr }, "Could not delete account");
+          }
         }
-        await new Promise((r) => setTimeout(r, 3_000));
       }
+
+      if (aborted || _stopRequested) {
+        pendingAccounts = accounts.slice(i);
+        stopped = true;
+        break;
+      }
+
+      await stopAwareDelay(2_000);
     }
   } finally {
-    syncState = { ...syncState, running: false, current: null };
+    syncState = {
+      ...syncState,
+      running: false,
+      current: null,
+      canResume: stopped && pendingAccounts.length > 0,
+      pendingCount: pendingAccounts.length,
+    };
     broadcastSyncProgress();
   }
 
-  logger.info({ processed: syncState.processed, deleted: syncState.failed }, "Sync complete");
+  logger.info({ processed: syncState.processed, deleted: syncState.failed, stopped }, "Sync finished");
   return { processed: syncState.processed, deleted: syncState.failed, failed };
 }

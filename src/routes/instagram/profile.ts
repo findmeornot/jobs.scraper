@@ -8,7 +8,7 @@ import {
   editAccount,
   removeAccount,
 } from "@/services/instagram-account.service";
-import { resolveInstagramId, syncMissingIds } from "@/services/instagram-id.service";
+import { resolveInstagramId, syncAccounts, requestSyncStop } from "@/services/instagram-id.service";
 import { findRegionAccountsByAccountId } from "@/repositories/region-account.repo";
 
 const profilePostSchema = z.object({
@@ -48,14 +48,25 @@ export async function profilePost(req: Request): Promise<Response> {
   }
 }
 
-export async function profileSyncIds(): Promise<Response> {
-  syncMissingIds().catch((e) =>
+const syncIdsSchema = z.object({
+  mode: z.enum(["all", "empty"]).default("all"),
+  resume: z.boolean().optional(),
+});
+
+export async function profileSyncIds(req: Request): Promise<Response> {
+  const raw = await parseBody(req);
+  const parsed = syncIdsSchema.safeParse(raw);
+  if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
+
+  syncAccounts(parsed.data).catch((e) =>
     logger.error({ error: e }, "profileSyncIds background sync failed"),
   );
-  return Response.json(
-    { success: true, message: "ID sync started in background" },
-    { status: 202 },
-  );
+  return Response.json({ success: true, message: "Sync started in background" }, { status: 202 });
+}
+
+export function profileSyncStop(): Response {
+  requestSyncStop();
+  return Response.json({ success: true, message: "Stop requested" });
 }
 
 export async function profilePut(req: Request): Promise<Response> {
