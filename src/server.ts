@@ -3,6 +3,7 @@ import { routes } from "@/routes/router";
 import { websocketHandlers } from "@/ws/handlers";
 import { logger } from "@/utils/logger";
 
+
 export function startServer(): void {
   const server = Bun.serve<undefined>({
     port: appConfig.port,
@@ -15,7 +16,7 @@ export function startServer(): void {
       },
     },
     websocket: websocketHandlers,
-    fetch: () => new Response("Forbidden", { status: 403 }),
+    fetch: () => new Response(Bun.file("frontend/forbidden.html"), { status: 403 }),
   });
 
   logger.info({ port: server.port }, "Server running");
