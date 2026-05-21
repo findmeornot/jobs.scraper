@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "bun src/db/scripts/migrate.ts",
     "db:reset": "bun src/db/scripts/reset.ts",
-    "db:seed": "bun src/db/scripts/seed.ts"
+    "db:seed": "bun src/db/scripts/seed.ts",
+    "db:setup": "bun db:reset && bun db:migrate && bun db:seed"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
