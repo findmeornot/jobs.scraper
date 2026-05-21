@@ -3,16 +3,19 @@ import { routes } from "@/routes/router";
 import { websocketHandlers } from "@/ws/handlers";
 import { logger } from "@/utils/logger";
 
-function forbidden(): Response {
-  return new Response("Forbidden", { status: 403 });
-}
-
 export function startServer(): void {
-  const server = Bun.serve({
+  const server = Bun.serve<undefined>({
     port: appConfig.port,
-    routes,
+    routes: {
+      ...routes,
+      "/favicon.ico": () => new Response(null, { status: 204 }),
+      "/ws": (req: Request, server: Bun.Server<undefined>) => {
+        if (server.upgrade(req)) return;
+        return new Response("WebSocket upgrade required", { status: 426 });
+      },
+    },
     websocket: websocketHandlers,
-    fetch: () => forbidden(),
+    fetch: () => new Response("Forbidden", { status: 403 }),
   });
 
   logger.info({ port: server.port }, "Server running");

@@ -3,14 +3,14 @@ import { wsManager } from "@/ws/manager";
 import { scrapeLogService } from "@/services/scrape-log.service";
 import { getSyncState } from "@/services/instagram-id.service";
 
-export const websocketHandlers = {
-  open(ws: ServerWebSocket<unknown>) {
+export const websocketHandlers: Bun.WebSocketHandler<undefined> = {
+  open(ws: ServerWebSocket<undefined>) {
     wsManager.add(ws);
     ws.send(JSON.stringify({ type: "state", ...scrapeLogService.currentState() }));
     ws.send(JSON.stringify({ type: "sync_progress", ...getSyncState() }));
   },
   message() {},
-  close(ws: ServerWebSocket<unknown>) {
+  close(ws: ServerWebSocket<undefined>) {
     wsManager.remove(ws);
   },
 };

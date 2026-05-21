@@ -113,10 +113,4 @@ export const routes = {
   "/api/master/group": { GET: c(a(masterGroupGet)), POST: c(a(masterGroupPost)) },
   "/api/master/group/:id": { PUT: c(a(masterGroupPut)), DELETE: c(a(masterGroupDelete)) },
 
-  // WebSocket upgrade
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  "/ws": (req: Request, server: any) => {
-    if (server.upgrade(req)) return;
-    return new Response("WebSocket upgrade required", { status: 426 });
-  },
 };
