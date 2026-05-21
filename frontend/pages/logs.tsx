@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { ScrollText } from "lucide-react";
 import { useScrapeStore } from "@/stores/scrape.store";
 import { useScrape } from "@/hooks/use-scrape";
@@ -31,14 +31,17 @@ export default function Logs() {
     return { success, error, deleted, totalAccounts };
   }, [liveLogs]);
 
-  const prevIsScraping = useMemo(() => ({ current: false }), []);
+  const prevIsScraping = useRef(false);
   useEffect(() => {
-    const wasOff = !prevIsScraping.current;
+    const was = prevIsScraping.current;
     prevIsScraping.current = isScraping;
-    if (!isScraping && !wasOff) {
+    if (isScraping && !was) {
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
     }
-  }, [isScraping, prevIsScraping]);
+    if (!isScraping && was) {
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    }
+  }, [isScraping]);
 
   const displaySessions = useMemo(() => {
     const liveRow: ScrapeSession | null =
@@ -110,7 +113,7 @@ export default function Logs() {
 
       {isLoading ? (
         <LogsSkeleton />
-      ) : sessions.length === 0 ? (
+      ) : displaySessions.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
             <ScrollText className="size-6 text-muted-foreground" />
