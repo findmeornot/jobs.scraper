@@ -4,14 +4,10 @@ async function resetDatabase() {
   try {
     console.log("Resetting database...");
 
-    // Disable foreign key checks
-    await db.unsafe("SET FOREIGN_KEY_CHECKS = 0");
-
-    // Get all tables
     const tables = await db.unsafe(`
       SELECT table_name 
       FROM information_schema.tables 
-      WHERE table_schema = (SELECT DATABASE())
+      WHERE table_schema = 'public'
     `);
 
     // Drop each table
@@ -19,12 +15,9 @@ async function resetDatabase() {
       const tableName = table.table_name ?? table.TABLE_NAME;
       if (tableName) {
         console.log(`Dropping table ${tableName}...`);
-        await db.unsafe(`DROP TABLE IF EXISTS \`${tableName}\``);
+        await db.unsafe(`DROP TABLE IF EXISTS "${tableName}" CASCADE`);
       }
     }
-
-    // Re-enable foreign key checks
-    await db.unsafe("SET FOREIGN_KEY_CHECKS = 1");
 
     console.log("Database reset complete.");
     process.exit(0);

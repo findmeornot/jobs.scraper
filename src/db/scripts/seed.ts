@@ -16,7 +16,7 @@ async function seedData() {
           (item: any) => db`
         INSERT INTO master_category (id, name, created_at, updated_at) 
         VALUES (${item.id}, ${item.name}, ${item.created_at}, ${item.updated_at})
-        ON DUPLICATE KEY UPDATE name=${item.name}, updated_at=${item.updated_at}
+        ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, updated_at=EXCLUDED.updated_at
       `,
         ),
       );
@@ -34,7 +34,7 @@ async function seedData() {
           (item: any) => db`
         INSERT INTO master_province (id, name, is_active, created_at, updated_at) 
         VALUES (${item.id}, ${item.name}, ${item.is_active}, ${item.created_at}, ${item.updated_at})
-        ON DUPLICATE KEY UPDATE name=${item.name}, is_active=${item.is_active}, updated_at=${item.updated_at}
+        ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, is_active=EXCLUDED.is_active, updated_at=EXCLUDED.updated_at
       `,
         ),
       );
@@ -52,7 +52,7 @@ async function seedData() {
           (item: any) => db`
         INSERT INTO master_group (id, name, is_active, created_at, updated_at) 
         VALUES (${item.id}, ${item.name}, ${item.is_active}, ${item.created_at}, ${item.updated_at})
-        ON DUPLICATE KEY UPDATE name=${item.name}, is_active=${item.is_active}, updated_at=${item.updated_at}
+        ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, is_active=EXCLUDED.is_active, updated_at=EXCLUDED.updated_at
       `,
         ),
       );
@@ -70,7 +70,7 @@ async function seedData() {
           (item: any) => db`
         INSERT INTO master_region (id, name, province_id, js_loker, group_id, created_at, updated_at) 
         VALUES (${item.id}, ${item.name}, ${item.province_id}, ${item.js_loker}, ${item.group_id}, ${item.created_at}, ${item.updated_at})
-        ON DUPLICATE KEY UPDATE name=${item.name}, province_id=${item.province_id}, js_loker=${item.js_loker}, group_id=${item.group_id}, updated_at=${item.updated_at}
+        ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, province_id=EXCLUDED.province_id, js_loker=EXCLUDED.js_loker, group_id=EXCLUDED.group_id, updated_at=EXCLUDED.updated_at
       `,
         ),
       );
@@ -88,7 +88,7 @@ async function seedData() {
           (item: any) => db`
         INSERT INTO instagram_account (id, instagram_id, username, followers, following, is_external, is_active, is_manual_input, created_at, updated_at) 
         VALUES (${item.id}, ${item.instagram_id}, ${item.username}, ${item.followers}, ${item.following}, ${item.is_external}, ${item.is_active}, ${item.is_manual_input}, ${item.created_at}, ${item.updated_at})
-        ON DUPLICATE KEY UPDATE instagram_id=${item.instagram_id}, username=${item.username}, followers=${item.followers}, following=${item.following}, is_external=${item.is_external}, is_active=${item.is_active}, is_manual_input=${item.is_manual_input}, updated_at=${item.updated_at}
+        ON CONFLICT (id) DO UPDATE SET instagram_id=EXCLUDED.instagram_id, username=EXCLUDED.username, followers=EXCLUDED.followers, following=EXCLUDED.following, is_external=EXCLUDED.is_external, is_active=EXCLUDED.is_active, is_manual_input=EXCLUDED.is_manual_input, updated_at=EXCLUDED.updated_at
       `,
         ),
       );
@@ -106,7 +106,7 @@ async function seedData() {
           (item: any) => db`
         INSERT INTO region_account (id, region_id, account_id, created_at, updated_at) 
         VALUES (${item.id}, ${item.region_id}, ${item.account_id}, ${item.created_at}, ${item.updated_at})
-        ON DUPLICATE KEY UPDATE region_id=${item.region_id}, account_id=${item.account_id}, updated_at=${item.updated_at}
+        ON CONFLICT (id) DO UPDATE SET region_id=EXCLUDED.region_id, account_id=EXCLUDED.account_id, updated_at=EXCLUDED.updated_at
       `,
         ),
       );
