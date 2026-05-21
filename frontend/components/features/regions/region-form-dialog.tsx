@@ -37,8 +37,22 @@ interface RegionDialogProps {
   isPending: boolean;
 }
 
-export function RegionDialog({ open, onOpenChange, editing, provinces, groups, onSubmit, isPending }: RegionDialogProps) {
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<RegionFormData>({
+export function RegionDialog({
+  open,
+  onOpenChange,
+  editing,
+  provinces,
+  groups,
+  onSubmit,
+  isPending,
+}: RegionDialogProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    control,
+    formState: { errors },
+  } = useForm<RegionFormData>({
     resolver: zodResolver(regionSchema),
   });
 
@@ -87,7 +101,9 @@ export function RegionDialog({ open, onOpenChange, editing, provinces, groups, o
                 />
               )}
             />
-            {errors.province_id && <p className="text-xs text-destructive">{errors.province_id.message}</p>}
+            {errors.province_id && (
+              <p className="text-xs text-destructive">{errors.province_id.message}</p>
+            )}
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-foreground">
@@ -120,8 +136,12 @@ export function RegionDialog({ open, onOpenChange, editing, provinces, groups, o
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={isPending}>Save</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              Save
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -137,8 +157,21 @@ interface ProvinceDialogProps {
   isPending: boolean;
 }
 
-export function ProvinceDialog({ open, onOpenChange, editing, onSubmit, isPending }: ProvinceDialogProps) {
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<ProvinceFormData>({
+export function ProvinceDialog({
+  open,
+  onOpenChange,
+  editing,
+  onSubmit,
+  isPending,
+}: ProvinceDialogProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<ProvinceFormData>({
     resolver: zodResolver(provinceSchema),
   });
 
@@ -192,8 +225,12 @@ export function ProvinceDialog({ open, onOpenChange, editing, onSubmit, isPendin
             </div>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={isPending}>Save</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              Save
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -209,8 +246,21 @@ interface GroupDialogProps {
   isPending: boolean;
 }
 
-export function GroupDialog({ open, onOpenChange, editing, onSubmit, isPending }: GroupDialogProps) {
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<GroupFormData>({
+export function GroupDialog({
+  open,
+  onOpenChange,
+  editing,
+  onSubmit,
+  isPending,
+}: GroupDialogProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<GroupFormData>({
     resolver: zodResolver(groupSchema),
   });
 
@@ -264,8 +314,12 @@ export function GroupDialog({ open, onOpenChange, editing, onSubmit, isPending }
             </div>
           )}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={isPending}>Save</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              Save
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

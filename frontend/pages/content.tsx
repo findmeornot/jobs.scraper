@@ -2,7 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContentSkeleton } from "@/components/ui/skeletons";
-import { useContent, useConfirmContent, useRejectContent, applyContentUpdate } from "@/hooks/use-content";
+import {
+  useContent,
+  useConfirmContent,
+  useRejectContent,
+  applyContentUpdate,
+} from "@/hooks/use-content";
 import { useConfirm } from "@/hooks/use-confirm";
 import { useContentStore } from "@/stores/content.store";
 import { useScrapeStore } from "@/stores/scrape.store";
@@ -15,7 +20,14 @@ import { cn } from "@/lib/utils";
 import type { ContentProcessedDetail } from "@/types";
 
 export default function Content() {
-  const { selectedDate, showPendingOnly, reviewerName, setSelectedDate, setShowPendingOnly, setReviewerName } = useContentStore();
+  const {
+    selectedDate,
+    showPendingOnly,
+    reviewerName,
+    setSelectedDate,
+    setShowPendingOnly,
+    setReviewerName,
+  } = useContentStore();
   const connected = useScrapeStore((s) => s.connected);
 
   const { data: groups = [], isLoading, refetch } = useContent(selectedDate, showPendingOnly);
@@ -29,7 +41,9 @@ export default function Content() {
   const [activeGroup, setActiveGroup] = useState<number | "all">("all");
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
-  useEffect(() => { setActiveGroup("all"); }, [selectedDate, showPendingOnly]);
+  useEffect(() => {
+    setActiveGroup("all");
+  }, [selectedDate, showPendingOnly]);
 
   const hasConnectedRef = useRef(false);
   useEffect(() => {
@@ -41,7 +55,8 @@ export default function Content() {
 
   useEffect(() => {
     function handler(e: Event) {
-      const { contentId, remoteUrl, error, skipReason } = (e as CustomEvent<ContentProcessedDetail>).detail;
+      const { contentId, remoteUrl, error, skipReason } = (e as CustomEvent<ContentProcessedDetail>)
+        .detail;
       applyContentUpdate(queryClient, contentId, remoteUrl, error, skipReason);
       if (error) toast.error("Processing failed", error);
     }
@@ -53,12 +68,23 @@ export default function Content() {
     setPendingIds((p) => new Set(p).add(id));
   }
   function removePending(id: number) {
-    setPendingIds((p) => { const n = new Set(p); n.delete(id); return n; });
+    setPendingIds((p) => {
+      const n = new Set(p);
+      n.delete(id);
+      return n;
+    });
   }
 
   async function handleConfirm(id: number) {
-    if (!reviewerName) { setEditingReviewer(true); return; }
-    const ok = await confirm({ title: "Confirm this content?", description: "It will be published and forwarded to the system.", confirmLabel: "Confirm" });
+    if (!reviewerName) {
+      setEditingReviewer(true);
+      return;
+    }
+    const ok = await confirm({
+      title: "Confirm this content?",
+      description: "It will be published and forwarded to the system.",
+      confirmLabel: "Confirm",
+    });
     if (!ok) return;
     addPending(id);
     await confirmContent.mutateAsync({ id, reviewer: reviewerName }).catch(() => {});
@@ -66,7 +92,12 @@ export default function Content() {
   }
 
   async function handleReject(id: number) {
-    const ok = await confirm({ title: "Delete this content?", description: "This post will be permanently removed and not published.", confirmLabel: "Delete", variant: "destructive" });
+    const ok = await confirm({
+      title: "Delete this content?",
+      description: "This post will be permanently removed and not published.",
+      confirmLabel: "Delete",
+      variant: "destructive",
+    });
     if (!ok) return;
     addPending(id);
     await rejectContent.mutateAsync(id).catch(() => {});
@@ -86,9 +117,10 @@ export default function Content() {
   const progressPct = totalItems > 0 ? Math.round((confirmedItems / totalItems) * 100) : 0;
   const groupsWithContent = groups.filter((g) => g.content.length > 0);
 
-  const displayedGroups = activeGroup === "all"
-    ? groupsWithContent
-    : groups.filter((g) => g.id === activeGroup && g.content.length > 0);
+  const displayedGroups =
+    activeGroup === "all"
+      ? groupsWithContent
+      : groups.filter((g) => g.id === activeGroup && g.content.length > 0);
 
   return (
     <div className="space-y-5">
@@ -97,7 +129,9 @@ export default function Content() {
         <div>
           <h2 className="text-xl font-semibold tracking-tight">Content Review</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {isLoading ? "Loading…" : `${pendingItems} pending · ${confirmedItems} confirmed · ${groupsWithContent.length} groups`}
+            {isLoading
+              ? "Loading…"
+              : `${pendingItems} pending · ${confirmedItems} confirmed · ${groupsWithContent.length} groups`}
           </p>
         </div>
         <ContentFilters
@@ -109,7 +143,10 @@ export default function Content() {
           loading={isLoading}
           onReviewerDraftChange={setReviewerDraft}
           onSaveReviewer={saveReviewer}
-          onEditReviewer={() => { setReviewerDraft(reviewerName); setEditingReviewer(true); }}
+          onEditReviewer={() => {
+            setReviewerDraft(reviewerName);
+            setEditingReviewer(true);
+          }}
           onCancelEditReviewer={() => setEditingReviewer(false)}
           onDateChange={setSelectedDate}
           onTogglePendingOnly={() => setShowPendingOnly(!showPendingOnly)}
@@ -121,11 +158,16 @@ export default function Content() {
       {!isLoading && totalItems > 0 && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{confirmedItems} of {totalItems} confirmed</span>
+            <span>
+              {confirmedItems} of {totalItems} confirmed
+            </span>
             <span className="font-medium">{progressPct}%</span>
           </div>
           <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-            <div className="h-full bg-green-500 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
+            <div
+              className="h-full bg-green-500 rounded-full transition-all duration-500"
+              style={{ width: `${progressPct}%` }}
+            />
           </div>
         </div>
       )}
@@ -134,8 +176,12 @@ export default function Content() {
       {!reviewerName && !editingReviewer && (
         <div className="rounded-xl border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-900/40 px-4 py-3 flex items-center gap-3">
           <User className="size-4 text-yellow-600 shrink-0" />
-          <p className="text-sm text-yellow-800 dark:text-yellow-200 flex-1">Set your name to start confirming content.</p>
-          <Button size="xs" variant="outline" onClick={() => setEditingReviewer(true)}>Set name</Button>
+          <p className="text-sm text-yellow-800 dark:text-yellow-200 flex-1">
+            Set your name to start confirming content.
+          </p>
+          <Button size="xs" variant="outline" onClick={() => setEditingReviewer(true)}>
+            Set name
+          </Button>
         </div>
       )}
 

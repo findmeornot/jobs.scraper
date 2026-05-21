@@ -49,7 +49,9 @@ export function ContentFilters({
               if (e.key === "Escape") onCancelEditReviewer();
             }}
           />
-          <Button size="xs" onClick={onSaveReviewer} disabled={!reviewerDraft.trim()}>Save</Button>
+          <Button size="xs" onClick={onSaveReviewer} disabled={!reviewerDraft.trim()}>
+            Save
+          </Button>
         </div>
       ) : (
         <button

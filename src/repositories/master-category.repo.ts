@@ -1,5 +1,5 @@
 import { db } from "@/db/index";
-import type { MasterCategory } from "@/types/index";
+import type { MasterCategory } from "../types";
 
 export async function findAllCategories(): Promise<MasterCategory[]> {
   return db<MasterCategory[]>`

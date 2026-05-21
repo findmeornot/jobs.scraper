@@ -11,10 +11,7 @@ export async function urlToBase64(url: string): Promise<string> {
   }
 }
 
-export async function saveUploadedFile(
-  file: File,
-  dir: string,
-): Promise<string> {
+export async function saveUploadedFile(file: File, dir: string): Promise<string> {
   const ext = file.name.split(".").pop() ?? "jpg";
   const filename = `${crypto.randomUUID()}.${ext}`;
   const fullPath = join(process.cwd(), dir, filename);

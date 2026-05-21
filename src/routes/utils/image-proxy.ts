@@ -1,6 +1,11 @@
 import { err } from "@/utils/response";
 
-const ALLOWED_HOSTNAMES = ["instagram.com", "cdninstagram.com", "fbcdn.net", "scontent.cdninstagram.com"];
+const ALLOWED_HOSTNAMES = [
+  "instagram.com",
+  "cdninstagram.com",
+  "fbcdn.net",
+  "scontent.cdninstagram.com",
+];
 
 function isAllowed(hostname: string): boolean {
   return ALLOWED_HOSTNAMES.some((h) => hostname === h || hostname.endsWith(`.${h}`));

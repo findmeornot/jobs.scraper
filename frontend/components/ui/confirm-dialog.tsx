@@ -48,7 +48,12 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   return (
     <ConfirmContext.Provider value={{ confirm }}>
       {children}
-      <Dialog open={state.open} onOpenChange={(open) => { if (!open) handleClose(false); }}>
+      <Dialog
+        open={state.open}
+        onOpenChange={(open) => {
+          if (!open) handleClose(false);
+        }}
+      >
         <DialogContent className="sm:max-w-sm" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>{state.options.title}</DialogTitle>

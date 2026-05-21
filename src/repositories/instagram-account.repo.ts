@@ -1,9 +1,7 @@
 import { db } from "@/db/index";
-import type { InstagramAccount } from "@/types/index";
+import type { InstagramAccount } from "../types";
 
-export async function findAccountByUsername(
-  username: string,
-): Promise<InstagramAccount | null> {
+export async function findAccountByUsername(username: string): Promise<InstagramAccount | null> {
   const rows = await db<InstagramAccount[]>`
     SELECT * FROM instagram_account WHERE username = ${username} LIMIT 1
   `;
@@ -19,9 +17,7 @@ export async function findAccountByInstagramId(
   return rows[0] ?? null;
 }
 
-export async function findAccountById(
-  id: number,
-): Promise<InstagramAccount | null> {
+export async function findAccountById(id: number): Promise<InstagramAccount | null> {
   const rows = await db<InstagramAccount[]>`
     SELECT * FROM instagram_account WHERE id = ${id} LIMIT 1
   `;
@@ -35,7 +31,7 @@ export async function findAllAccounts(filters?: {
   const extFilter = filters?.isExternal !== undefined ? (filters.isExternal ? 1 : 0) : null;
   const activeFilter = filters?.isActive !== undefined ? (filters.isActive ? 1 : 0) : null;
 
-  return db<any[]>`
+  return db<(InstagramAccount & { region_count: number })[]>`
     SELECT ia.*, COUNT(ra.id) as region_count
     FROM instagram_account ia
     LEFT JOIN region_account ra ON ra.account_id = ia.id
@@ -46,9 +42,7 @@ export async function findAllAccounts(filters?: {
   `;
 }
 
-export async function findAccountsMissingInstagramId(): Promise<
-  InstagramAccount[]
-> {
+export async function findAccountsMissingInstagramId(): Promise<InstagramAccount[]> {
   return db<InstagramAccount[]>`
     SELECT * FROM instagram_account
     WHERE instagram_id IS NULL AND is_active = 1
@@ -75,7 +69,12 @@ export async function upsertAccount(data: {
           following   = ${data.following}
       WHERE id = ${existing[0].id}
     `;
-    return { ...existing[0], instagram_id: data.instagram_id, followers: data.followers, following: data.following };
+    return {
+      ...existing[0],
+      instagram_id: data.instagram_id,
+      followers: data.followers,
+      following: data.following,
+    };
   }
 
   const result = await db`
@@ -86,10 +85,7 @@ export async function upsertAccount(data: {
   return (await findAccountById(id))!;
 }
 
-export async function updateInstagramId(
-  username: string,
-  instagramId: string,
-): Promise<void> {
+export async function updateInstagramId(username: string, instagramId: string): Promise<void> {
   await db`
     UPDATE instagram_account SET instagram_id = ${instagramId} WHERE username = ${username}
   `;
@@ -123,7 +119,12 @@ export async function deleteAccount(id: number): Promise<void> {
 
 export async function updateAccount(
   id: number,
-  data: Partial<Pick<InstagramAccount, "username" | "is_active" | "is_external" | "instagram_id" | "followers" | "following">>,
+  data: Partial<
+    Pick<
+      InstagramAccount,
+      "username" | "is_active" | "is_external" | "instagram_id" | "followers" | "following"
+    >
+  >,
 ): Promise<void> {
   await db`
     UPDATE instagram_account SET

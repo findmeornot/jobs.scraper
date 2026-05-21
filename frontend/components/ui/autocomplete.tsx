@@ -8,11 +8,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 export interface AutocompleteItem {
@@ -67,17 +63,11 @@ export function Autocomplete({
           className,
         )}
       >
-        <span className="truncate">
-          {selectedItem ? selectedItem.label : placeholder}
-        </span>
+        <span className="truncate">{selectedItem ? selectedItem.label : placeholder}</span>
         <ChevronsUpDown className="ml-2 size-3.5 shrink-0 opacity-50" />
       </PopoverTrigger>
 
-      <PopoverContent
-        className="w-(--anchor-width) min-w-48 p-0"
-        align="start"
-        sideOffset={4}
-      >
+      <PopoverContent className="w-(--anchor-width) min-w-48 p-0" align="start" sideOffset={4}>
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
           <CommandList>

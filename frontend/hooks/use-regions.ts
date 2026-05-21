@@ -18,7 +18,9 @@ async function fetchAllRegionData() {
 }
 
 async function fetchRegionAccounts(regionId: number): Promise<RegionAccount[]> {
-  const data = await apiFetch<{ results: RegionAccount[] }>(`/api/master/region/${regionId}/accounts`);
+  const data = await apiFetch<{ results: RegionAccount[] }>(
+    `/api/master/region/${regionId}/accounts`,
+  );
   return data.results ?? [];
 }
 
@@ -60,8 +62,7 @@ export function useSaveRegion() {
 export function useDeleteRegion() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) =>
-      apiFetch(`/api/master/region/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => apiFetch(`/api/master/region/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       toast.success("Region deleted");
       qc.invalidateQueries({ queryKey: ["region-data"] });
@@ -93,8 +94,7 @@ export function useSaveProvince() {
 export function useDeleteProvince() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) =>
-      apiFetch(`/api/master/province/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => apiFetch(`/api/master/province/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       toast.success("Province deleted");
       qc.invalidateQueries({ queryKey: ["region-data"] });
@@ -126,8 +126,7 @@ export function useSaveGroup() {
 export function useDeleteGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) =>
-      apiFetch(`/api/master/group/${id}`, { method: "DELETE" }),
+    mutationFn: (id: number) => apiFetch(`/api/master/group/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       toast.success("Group deleted");
       qc.invalidateQueries({ queryKey: ["region-data"] });
@@ -171,7 +170,15 @@ export function useRemoveAccountFromRegion() {
 export function useUpdateRegionGroup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ regionId, groupId, regions }: { regionId: number; groupId: number | null; regions: Region[] }) => {
+    mutationFn: async ({
+      regionId,
+      groupId,
+      regions,
+    }: {
+      regionId: number;
+      groupId: number | null;
+      regions: Region[];
+    }) => {
       const region = regions.find((r) => r.id === regionId);
       if (!region) throw new Error("Region not found");
       return apiFetch(`/api/master/region/${regionId}`, {

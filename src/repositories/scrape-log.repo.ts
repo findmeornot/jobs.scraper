@@ -75,7 +75,7 @@ export async function markStuckSessionsFailed(): Promise<number> {
     SET status = 'failed', finished_at = CURRENT_TIMESTAMP(3)
     WHERE status IN ('running', 'paused') AND finished_at IS NULL
   `;
-  return Number((result as any).affectedRows ?? 0);
+  return Number((result as unknown as { affectedRows?: number }).affectedRows ?? 0);
 }
 
 export async function findRecentSessions(limit = 50): Promise<ScrapeSession[]> {

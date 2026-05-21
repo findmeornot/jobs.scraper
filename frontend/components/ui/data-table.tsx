@@ -86,12 +86,8 @@ export function DataTable<TData, TValue>({
               <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder={searchPlaceholder}
-                value={
-                  (table.getColumn(searchColumn)?.getFilterValue() as string) ?? ""
-                }
-                onChange={(e) =>
-                  table.getColumn(searchColumn)?.setFilterValue(e.target.value)
-                }
+                value={(table.getColumn(searchColumn)?.getFilterValue() as string) ?? ""}
+                onChange={(e) => table.getColumn(searchColumn)?.setFilterValue(e.target.value)}
                 className="pl-8"
               />
             </div>
@@ -128,7 +124,10 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => {
                   const canSort = header.column.getCanSort();
                   return (
-                    <TableHead key={header.id} style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}>
+                    <TableHead
+                      key={header.id}
+                      style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
+                    >
                       {header.isPlaceholder ? null : canSort ? (
                         <button
                           type="button"
@@ -138,17 +137,11 @@ export function DataTable<TData, TValue>({
                             header.column.getIsSorted() && "text-foreground",
                           )}
                         >
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
+                          {flexRender(header.column.columnDef.header, header.getContext())}
                           <SortIcon sorted={header.column.getIsSorted()} />
                         </button>
                       ) : (
-                        flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )
+                        flexRender(header.column.columnDef.header, header.getContext())
                       )}
                     </TableHead>
                   );
@@ -159,16 +152,10 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() ? "selected" : undefined}
-                >
+                <TableRow key={row.id} data-state={row.getIsSelected() ? "selected" : undefined}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -190,9 +177,8 @@ export function DataTable<TData, TValue>({
       {table.getPageCount() > 1 && (
         <div className="flex items-center justify-between px-1">
           <p className="text-xs text-muted-foreground">
-            {table.getFilteredRowModel().rows.length} row(s) ·{" "}
-            page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
+            {table.getFilteredRowModel().rows.length} row(s) · page{" "}
+            {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
           </p>
           <div className="flex gap-1.5">
             <Button

@@ -39,7 +39,8 @@ export function ConfirmationRateCard({
         </div>
         <div className="mt-4">
           <div className="text-4xl font-bold tabular-nums">
-            {confirmRate}<span className="text-2xl text-muted-foreground">%</span>
+            {confirmRate}
+            <span className="text-2xl text-muted-foreground">%</span>
           </div>
           <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden">
             <div
@@ -63,7 +64,9 @@ export function ConfirmationRateCard({
                 <span className={cn("size-2 rounded-full shrink-0", item.color)} />
                 <span className="text-xs text-muted-foreground truncate">{item.label}</span>
               </div>
-              <span className="text-sm font-medium tabular-nums shrink-0">{item.value.toLocaleString()}</span>
+              <span className="text-sm font-medium tabular-nums shrink-0">
+                {item.value.toLocaleString()}
+              </span>
             </div>
           ))}
         </div>

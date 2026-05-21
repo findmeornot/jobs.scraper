@@ -1,4 +1,3 @@
-import * as React from "react";
 import { Toast } from "@base-ui/react/toast";
 import { CheckCircle2, AlertCircle, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -64,9 +63,7 @@ function ToastItem({ t }: { t: Toast.Root.ToastObject<ToastData> }) {
       <Icon className={cn("mt-0.5 size-4 shrink-0", iconClass)} aria-hidden />
       <div className="flex-1 space-y-0.5">
         {t.title && (
-          <Toast.Title className="text-sm font-medium text-foreground">
-            {t.title}
-          </Toast.Title>
+          <Toast.Title className="text-sm font-medium text-foreground">{t.title}</Toast.Title>
         )}
         {t.description && (
           <Toast.Description className="text-xs text-muted-foreground">

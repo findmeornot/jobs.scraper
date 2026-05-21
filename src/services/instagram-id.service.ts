@@ -1,6 +1,11 @@
 import { instagramConfig } from "@/config/instagram";
 import { puppeteerProfileId } from "@/scraper/puppeteer";
-import { findAllAccounts, upsertAccount, deleteAccount } from "@/repositories/instagram-account.repo";
+import {
+  findAllAccounts,
+  upsertAccount,
+  deleteAccount,
+} from "@/repositories/instagram-account.repo";
+import { logger } from "@/utils/logger";
 
 const WEB_UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
@@ -19,22 +24,22 @@ export function extractCountsFromHtml(html: string): { followers: number; follow
     html.match(/property="og:description"[^>]*content="([^"]+)"/i)?.[1] ??
     html.match(/content="([^"]+)"[^>]*property="og:description"/i)?.[1];
   if (desc) {
-    const fm  = desc.match(/([\d.,KMkm]+)\s*Followers/i);
+    const fm = desc.match(/([\d.,KMkm]+)\s*Followers/i);
     const fwm = desc.match(/([\d.,KMkm]+)\s*Following/i);
-    const followers = fm  ? parseCount(fm[1])  : 0;
-    const following = fwm ? parseCount(fwm[1]) : 0;
+    const followers = fm?.[1] ? parseCount(fm[1]) : 0;
+    const following = fwm?.[1] ? parseCount(fwm[1]) : 0;
     if (followers > 0 || following > 0) return { followers, following };
   }
   // Fallback: exact counts in embedded JSON
   const followers = Number(
     html.match(/"follower_count":(\d+)/)?.[1] ??
-    html.match(/"edge_followed_by":\{"count":(\d+)\}/)?.[1] ??
-    0,
+      html.match(/"edge_followed_by":\{"count":(\d+)\}/)?.[1] ??
+      0,
   );
   const following = Number(
     html.match(/"following_count":(\d+)/)?.[1] ??
-    html.match(/"edge_follow":\{"count":(\d+)\}/)?.[1] ??
-    0,
+      html.match(/"edge_follow":\{"count":(\d+)\}/)?.[1] ??
+      0,
   );
   return { followers, following };
 }
@@ -63,8 +68,19 @@ async function resolveViaWebApi(username: string): Promise<ResolvedId> {
 
   if (!res.ok) throw new Error(`web_profile_info returned HTTP ${res.status}`);
 
-  const json: unknown = await res.json();
-  const user = (json as any)?.data?.user;
+  interface WebProfileInfoResponse {
+    data?: {
+      user?: {
+        id?: string;
+        follower_count?: number;
+        following_count?: number;
+        edge_followed_by?: { count: number };
+        edge_follow?: { count: number };
+      };
+    };
+  }
+  const json = (await res.json()) as WebProfileInfoResponse;
+  const user = json?.data?.user;
 
   if (!user?.id) throw new Error("No user.id in web_profile_info response");
 
@@ -97,7 +113,10 @@ async function resolveViaHtmlParse(username: string): Promise<ResolvedId> {
   let id: string | null = null;
   for (const pattern of idPatterns) {
     const match = html.match(pattern);
-    if (match?.[1]) { id = match[1]; break; }
+    if (match?.[1]) {
+      id = match[1];
+      break;
+    }
   }
 
   if (!id) throw new Error(`No ID pattern matched in HTML for @${username}`);
@@ -123,8 +142,8 @@ async function resolveViaPuppeteer(username: string): Promise<ResolvedId> {
 export async function resolveInstagramId(username: string): Promise<ResolvedId> {
   const strategies = [
     { name: "web_profile_info API", fn: () => resolveViaWebApi(username) },
-    { name: "HTML parse",           fn: () => resolveViaHtmlParse(username) },
-    { name: "Puppeteer",            fn: () => resolveViaPuppeteer(username) },
+    { name: "HTML parse", fn: () => resolveViaHtmlParse(username) },
+    { name: "Puppeteer", fn: () => resolveViaPuppeteer(username) },
   ];
 
   let lastError: unknown;
@@ -132,12 +151,12 @@ export async function resolveInstagramId(username: string): Promise<ResolvedId> 
   for (const { name, fn } of strategies) {
     try {
       const result = await fn();
-      console.log(`[resolveInstagramId] @${username} → ${result.id} (via ${name})`);
+      logger.info({ username, id: result.id, strategy: name }, "Instagram ID resolved");
       return result;
     } catch (err) {
-      console.warn(
-        `[resolveInstagramId] ${name} failed for @${username}:`,
-        err instanceof Error ? err.message : err,
+      logger.warn(
+        { username, strategy: name, error: err instanceof Error ? err.message : err },
+        "Strategy failed",
       );
       lastError = err;
     }
@@ -154,13 +173,17 @@ export async function resolveInstagramId(username: string): Promise<ResolvedId> 
  * Syncs Instagram IDs for ALL accounts.
  * If an account's ID cannot be resolved by any strategy, the account is deleted.
  */
-export async function syncMissingIds(): Promise<{ processed: number; deleted: number; failed: string[] }> {
+export async function syncMissingIds(): Promise<{
+  processed: number;
+  deleted: number;
+  failed: string[];
+}> {
   const accounts = await findAllAccounts();
   const failed: string[] = [];
   let processed = 0;
   let deleted = 0;
 
-  console.log(`[syncAllIds] Syncing ${accounts.length} accounts`);
+  logger.info({ count: accounts.length }, "Syncing accounts");
 
   for (const account of accounts) {
     try {
@@ -170,18 +193,18 @@ export async function syncMissingIds(): Promise<{ processed: number; deleted: nu
       await new Promise((r) => setTimeout(r, 3_000));
     } catch (err) {
       const msg = `@${account.username}: ${err instanceof Error ? err.message : "Unknown error"}`;
-      console.error(`[syncAllIds] All strategies failed — deleting — ${msg}`);
+      logger.error({ username: account.username }, `All strategies failed — deleting — ${msg}`);
       failed.push(msg);
       try {
         await deleteAccount(account.id);
         deleted++;
       } catch (delErr) {
-        console.error(`[syncAllIds] Could not delete @${account.username}:`, delErr);
+        logger.error({ username: account.username, error: delErr }, "Could not delete account");
       }
       await new Promise((r) => setTimeout(r, 5_000));
     }
   }
 
-  console.log(`[syncAllIds] Done — ${processed} synced, ${deleted} deleted, ${failed.length} failed`);
+  logger.info({ processed, deleted, failed: failed.length }, "Sync complete");
   return { processed, deleted, failed };
 }

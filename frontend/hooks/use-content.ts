@@ -38,13 +38,19 @@ export function useConfirmContent() {
       const keys = qc.getQueriesData<ContentGroup[]>({ queryKey: ["content"] });
       const snapshots = keys.map(([key, data]) => ({ key, data }));
 
-      for (const [key, prev] of keys) {
+      for (const [key] of keys) {
         qc.setQueryData<ContentGroup[]>(key, (groups) =>
           groups?.map((g) => ({
             ...g,
             content: g.content.map((c) =>
               c.id === id
-                ? { ...c, confirmed_at: new Date().toISOString(), action_by: reviewer, processingDone: false, processingError: undefined }
+                ? {
+                    ...c,
+                    confirmed_at: new Date().toISOString(),
+                    action_by: reviewer,
+                    processingDone: false,
+                    processingError: undefined,
+                  }
                 : c,
             ),
           })),
@@ -80,7 +86,9 @@ export function useRejectContent() {
           groups?.map((g) => ({
             ...g,
             content: g.content.filter((c) => c.id !== id),
-            content_count: g.content.some((c) => c.id === id) ? g.content_count - 1 : g.content_count,
+            content_count: g.content.some((c) => c.id === id)
+              ? g.content_count - 1
+              : g.content_count,
           })),
         );
       }
@@ -108,16 +116,17 @@ export function applyContentUpdate(
     qc.setQueryData<ContentGroup[]>(key, (groups) =>
       groups?.map((g) => ({
         ...g,
-        content: g.content.map((c): ContentItem =>
-          c.id === contentId
-            ? {
-                ...c,
-                remote_url: remoteUrl ?? c.remote_url,
-                processingDone: true,
-                processingError: error,
-                skipReason,
-              }
-            : c,
+        content: g.content.map(
+          (c): ContentItem =>
+            c.id === contentId
+              ? {
+                  ...c,
+                  remote_url: remoteUrl ?? c.remote_url,
+                  processingDone: true,
+                  processingError: error,
+                  skipReason,
+                }
+              : c,
         ),
       })),
     );

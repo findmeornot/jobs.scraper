@@ -7,9 +7,7 @@ const MOBILE_UA =
   "Instagram 10.3.2 (iPhone7,2; iPhone OS 9_3_3; en_US; en-US; scale=2.00; 750x1334) AppleWebKit/420+";
 
 function randomDelay(min = 2000, max = 5000): Promise<void> {
-  return new Promise((r) =>
-    setTimeout(r, Math.floor(Math.random() * (max - min + 1)) + min),
-  );
+  return new Promise((r) => setTimeout(r, Math.floor(Math.random() * (max - min + 1)) + min));
 }
 
 export async function fetchProfileId(username: string): Promise<ScrapedProfile> {
@@ -36,22 +34,21 @@ export async function fetchUserInfo(
   userId: string,
   sessionId: string,
 ): Promise<{ follower_count: number; following_count: number }> {
-  const response = await fetch(
-    `https://i.instagram.com/api/v1/users/${userId}/info/`,
-    {
-      headers: {
-        "User-Agent": MOBILE_UA,
-        Cookie: `sessionid=${sessionId}`,
-      },
-      signal: AbortSignal.timeout(instagramConfig.timeout),
+  const response = await fetch(`https://i.instagram.com/api/v1/users/${userId}/info/`, {
+    headers: {
+      "User-Agent": MOBILE_UA,
+      Cookie: `sessionid=${sessionId}`,
     },
-  );
+    signal: AbortSignal.timeout(instagramConfig.timeout),
+  });
 
   if (!response.ok) {
     throw new Error(`User info fetch failed: ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as {
+    user?: { follower_count?: number; following_count?: number };
+  };
   return {
     follower_count: data.user?.follower_count ?? 0,
     following_count: data.user?.following_count ?? 0,
@@ -66,9 +63,7 @@ export async function fetchInstagramPosts(
 ): Promise<ScrapedPostsResponse> {
   const sessionId = instagramConfig.sessionId;
   if (!instagramConfig.proxyUrl || !instagramConfig.proxyApiKey) {
-    throw new Error(
-      "PROXY_URL and PROXY_API_KEY must be configured for post scraping.",
-    );
+    throw new Error("PROXY_URL and PROXY_API_KEY must be configured for post scraping.");
   }
 
   await randomDelay();
@@ -124,7 +119,16 @@ export async function fetchInstagramPosts(
     throw new Error("Invalid Instagram API response structure");
   }
 
-  const edges: any[] = timeline.edges;
+  interface TimelineEdge {
+    node: {
+      id: string;
+      taken_at_timestamp: number;
+      display_url: string;
+      shortcode: string;
+      edge_media_to_caption: { edges: Array<{ node: { text: string } }> };
+    };
+  }
+  const edges = timeline.edges as TimelineEdge[];
   const filteredEdges = edges.filter((edge) => {
     if (!afterDate) return true;
     const postDate = fromUnix(edge.node.taken_at_timestamp);
@@ -142,7 +146,7 @@ export async function fetchInstagramPosts(
         // non-fatal: base64 is optional
       }
       return {
-        id: node.id,
+        id: Number(node.id),
         caption: node.edge_media_to_caption.edges[0]?.node.text ?? "",
         display_url: node.display_url,
         shortcode: node.shortcode,

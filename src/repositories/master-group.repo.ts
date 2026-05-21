@@ -1,5 +1,5 @@
 import { db } from "@/db/index";
-import type { MasterGroup } from "@/types/index";
+import type { MasterGroup } from "../types";
 
 export async function findAllGroups(activeOnly = false): Promise<MasterGroup[]> {
   if (activeOnly) {

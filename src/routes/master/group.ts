@@ -2,7 +2,13 @@ import { z } from "zod";
 import { ok, okResults, err, serverErr } from "@/utils/response";
 import { logger } from "@/utils/logger";
 import { getParams, parseBody } from "@/utils/request";
-import { findAllGroups, findGroupById, createGroup, updateGroup, deleteGroup } from "@/repositories/master-group.repo";
+import {
+  findAllGroups,
+  findGroupById,
+  createGroup,
+  updateGroup,
+  deleteGroup,
+} from "@/repositories/master-group.repo";
 
 const groupSchema = z.object({
   name: z.string().min(1, "name is required"),
@@ -40,7 +46,11 @@ export async function masterGroupPut(req: Request): Promise<Response> {
     const raw = await parseBody(req);
     const parsed = groupSchema.partial().safeParse(raw);
     if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
-    await updateGroup(id, parsed.data);
+    const { is_active, ...rest } = parsed.data;
+    await updateGroup(id, {
+      ...rest,
+      is_active: is_active !== undefined ? Boolean(is_active) : undefined,
+    });
     const updated = await findGroupById(id);
     return ok(updated);
   } catch (error) {

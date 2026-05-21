@@ -1,5 +1,10 @@
 import { PieChart, Pie, Cell, Tooltip as RechartTooltip, Legend as RechartLegend } from "recharts";
-import { ChartContainer, ChartTooltipContent, ChartLegendContent, type ChartConfig } from "@/components/ui/chart";
+import {
+  ChartContainer,
+  ChartTooltipContent,
+  ChartLegendContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 
 const chartConfig = {
@@ -15,7 +20,11 @@ interface AccountDistributionChartProps {
   totalAccounts: number;
 }
 
-export function AccountDistributionChart({ externalAccounts, internalAccounts, totalAccounts }: AccountDistributionChartProps) {
+export function AccountDistributionChart({
+  externalAccounts,
+  internalAccounts,
+  totalAccounts,
+}: AccountDistributionChartProps) {
   const data = [
     { name: "external", value: externalAccounts, fill: "var(--color-chart-1)" },
     { name: "internal", value: internalAccounts, fill: "var(--color-chart-2)" },
@@ -24,15 +33,27 @@ export function AccountDistributionChart({ externalAccounts, internalAccounts, t
   return (
     <div className={cn(card, "col-span-7")}>
       <p className="text-sm font-semibold">Account Distribution</p>
-      <p className="text-xs text-muted-foreground mt-0.5">{totalAccounts.toLocaleString()} total accounts registered</p>
+      <p className="text-xs text-muted-foreground mt-0.5">
+        {totalAccounts.toLocaleString()} total accounts registered
+      </p>
       {totalAccounts === 0 ? (
         <EmptyChart />
       ) : (
         <ChartContainer config={chartConfig} className="aspect-auto h-52 w-full mt-3">
           <PieChart>
             <RechartTooltip content={<ChartTooltipContent hideLabel />} />
-            <Pie data={data} dataKey="value" nameKey="name" innerRadius={60} outerRadius={90} paddingAngle={3} strokeWidth={0}>
-              {data.map((e) => <Cell key={e.name} fill={e.fill} />)}
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={60}
+              outerRadius={90}
+              paddingAngle={3}
+              strokeWidth={0}
+            >
+              {data.map((e) => (
+                <Cell key={e.name} fill={e.fill} />
+              ))}
             </Pie>
             <RechartLegend content={<ChartLegendContent nameKey="name" />} />
           </PieChart>

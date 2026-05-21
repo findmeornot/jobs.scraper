@@ -1,4 +1,12 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartTooltip, Cell } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartTooltip,
+  Cell,
+} from "recharts";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +22,11 @@ interface ContentBarChartProps {
   internalAccounts: number;
 }
 
-export function ContentBarChart({ totalAccounts, externalAccounts, internalAccounts }: ContentBarChartProps) {
+export function ContentBarChart({
+  totalAccounts,
+  externalAccounts,
+  internalAccounts,
+}: ContentBarChartProps) {
   const data = [
     { label: "Total", value: totalAccounts, fill: "var(--color-chart-1)" },
     { label: "External", value: externalAccounts, fill: "var(--color-chart-5)" },
@@ -28,11 +40,26 @@ export function ContentBarChart({ totalAccounts, externalAccounts, internalAccou
       <ChartContainer config={chartConfig} className="aspect-auto h-44 w-full mt-3">
         <BarChart data={data} barSize={32} margin={{ left: -10, right: 8 }}>
           <CartesianGrid vertical={false} stroke="var(--color-border)" />
-          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} />
-          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }} allowDecimals={false} />
-          <RechartTooltip content={<ChartTooltipContent hideLabel />} cursor={{ fill: "var(--color-muted)", opacity: 0.5 }} />
+          <XAxis
+            dataKey="label"
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+          />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+            allowDecimals={false}
+          />
+          <RechartTooltip
+            content={<ChartTooltipContent hideLabel />}
+            cursor={{ fill: "var(--color-muted)", opacity: 0.5 }}
+          />
           <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-            {data.map((e) => <Cell key={e.label} fill={e.fill} />)}
+            {data.map((e) => (
+              <Cell key={e.label} fill={e.fill} />
+            ))}
           </Bar>
         </BarChart>
       </ChartContainer>

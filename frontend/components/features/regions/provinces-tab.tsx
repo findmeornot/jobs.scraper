@@ -14,46 +14,57 @@ interface ProvincesTabProps {
 }
 
 export function ProvincesTab({ provinces, tabChips, onEdit, onDelete }: ProvincesTabProps) {
-  const columns: ColumnDef<Province>[] = useMemo(() => [
-    {
-      accessorKey: "name",
-      header: "Name",
-      cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
-    },
-    {
-      accessorKey: "is_active",
-      header: "Status",
-      enableSorting: false,
-      cell: ({ row }) => {
-        const active = row.getValue<boolean>("is_active");
-        return <Badge variant={active ? "default" : "outline"}>{active ? "Active" : "Inactive"}</Badge>;
+  const columns: ColumnDef<Province>[] = useMemo(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
       },
-    },
-    {
-      id: "actions",
-      header: () => null,
-      enableSorting: false,
-      size: 80,
-      cell: ({ row }) => {
-        const p = row.original;
-        return (
-          <div className="flex items-center justify-end gap-1">
-            <Button variant="ghost" size="icon-sm" onClick={() => onEdit(p)} aria-label={`Edit ${p.name}`}>
-              <Pencil className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost" size="icon-sm"
-              onClick={() => onDelete(p)}
-              className="hover:text-destructive hover:bg-destructive/10"
-              aria-label={`Delete ${p.name}`}
-            >
-              <Trash2 className="size-3.5" />
-            </Button>
-          </div>
-        );
+      {
+        accessorKey: "is_active",
+        header: "Status",
+        enableSorting: false,
+        cell: ({ row }) => {
+          const active = row.getValue<boolean>("is_active");
+          return (
+            <Badge variant={active ? "default" : "outline"}>{active ? "Active" : "Inactive"}</Badge>
+          );
+        },
       },
-    },
-  ], [onEdit, onDelete]);
+      {
+        id: "actions",
+        header: () => null,
+        enableSorting: false,
+        size: 80,
+        cell: ({ row }) => {
+          const p = row.original;
+          return (
+            <div className="flex items-center justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => onEdit(p)}
+                aria-label={`Edit ${p.name}`}
+              >
+                <Pencil className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => onDelete(p)}
+                className="hover:text-destructive hover:bg-destructive/10"
+                aria-label={`Delete ${p.name}`}
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </div>
+          );
+        },
+      },
+    ],
+    [onEdit, onDelete],
+  );
 
   if (provinces.length === 0) {
     return (

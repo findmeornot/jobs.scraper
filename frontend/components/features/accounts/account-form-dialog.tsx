@@ -12,7 +12,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { accountSchema, editAccountSchema, type AccountFormData, type EditAccountFormData } from "@/schemas/account.schema";
+import {
+  accountSchema,
+  editAccountSchema,
+  type AccountFormData,
+  type EditAccountFormData,
+} from "@/schemas/account.schema";
 import type { Account } from "@/types";
 
 const TYPE_OPTIONS = [
@@ -32,8 +37,20 @@ interface AddAccountDialogProps {
   isPending: boolean;
 }
 
-export function AddAccountDialog({ open, onOpenChange, onSubmit, isPending }: AddAccountDialogProps) {
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AccountFormData>({
+export function AddAccountDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  isPending,
+}: AddAccountDialogProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
     defaultValues: { username: "", is_external: true },
   });
@@ -57,7 +74,9 @@ export function AddAccountDialog({ open, onOpenChange, onSubmit, isPending }: Ad
         </DialogHeader>
         <form onSubmit={handleSubmit(onValid)} className="space-y-4">
           <div className="space-y-1.5">
-            <label htmlFor="username" className="text-xs font-medium text-foreground">Username</label>
+            <label htmlFor="username" className="text-xs font-medium text-foreground">
+              Username
+            </label>
             <Input
               id="username"
               autoFocus
@@ -89,9 +108,18 @@ export function AddAccountDialog({ open, onOpenChange, onSubmit, isPending }: Ad
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? <><Loader2 className="size-4 animate-spin" />Adding...</> : "Add Account"}
+              {isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add Account"
+              )}
             </Button>
           </DialogFooter>
         </form>
@@ -108,8 +136,21 @@ interface EditAccountDialogProps {
   isPending: boolean;
 }
 
-export function EditAccountDialog({ open, onOpenChange, account, onSubmit, isPending }: EditAccountDialogProps) {
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<EditAccountFormData>({
+export function EditAccountDialog({
+  open,
+  onOpenChange,
+  account,
+  onSubmit,
+  isPending,
+}: EditAccountDialogProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<EditAccountFormData>({
     resolver: zodResolver(editAccountSchema),
   });
 
@@ -186,9 +227,18 @@ export function EditAccountDialog({ open, onOpenChange, account, onSubmit, isPen
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? <><Loader2 className="size-4 animate-spin" />Saving...</> : "Save"}
+              {isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </DialogFooter>
         </form>

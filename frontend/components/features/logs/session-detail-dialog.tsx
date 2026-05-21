@@ -2,12 +2,7 @@ import { useState } from "react";
 import { Loader2, ScrollText } from "lucide-react";
 import dayjs from "dayjs";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LogLine } from "./live-logs-panel";
 import { getDurationLabel } from "./sessions-table";
 import { apiFetch } from "@/lib/api";
@@ -27,7 +22,9 @@ export function SessionDetailDialog({ open, onOpenChange, session }: SessionDeta
     if (!session) return;
     setLoading(true);
     try {
-      const data = await apiFetch<{ logs: LiveLogEntry[] }>(`/api/scrape/sessions/${session.id}/logs`);
+      const data = await apiFetch<{ logs: LiveLogEntry[] }>(
+        `/api/scrape/sessions/${session.id}/logs`,
+      );
       setLogs(data.logs ?? []);
     } finally {
       setLoading(false);
@@ -42,7 +39,10 @@ export function SessionDetailDialog({ open, onOpenChange, session }: SessionDeta
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-3xl p-0 flex flex-col gap-0 overflow-hidden" style={{ maxHeight: "85vh" }}>
+      <DialogContent
+        className="sm:max-w-3xl p-0 flex flex-col gap-0 overflow-hidden"
+        style={{ maxHeight: "85vh" }}
+      >
         <div className="px-6 pt-6 pb-4 border-b border-border shrink-0">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">

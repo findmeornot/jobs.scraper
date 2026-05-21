@@ -23,7 +23,9 @@ export default function Logs() {
   const liveStats = useMemo(() => {
     const success = liveLogs.filter((e) => e.level === "success").length;
     const error = liveLogs.filter((e) => e.level === "error" && e.account_username !== null).length;
-    const deleted = liveLogs.filter((e) => e.level === "warn" && e.message.includes("deleted")).length;
+    const deleted = liveLogs.filter(
+      (e) => e.level === "warn" && e.message.includes("deleted"),
+    ).length;
     const startLog = liveLogs.find((e) => e.message.startsWith("Starting scrape of"));
     const totalAccounts = Number(startLog?.message.match(/Starting scrape of (\d+)/)?.[1] ?? 0);
     return { success, error, deleted, totalAccounts };
@@ -39,23 +41,25 @@ export default function Logs() {
   }, [isScraping, prevIsScraping]);
 
   const displaySessions = useMemo(() => {
-    const liveRow: ScrapeSession | null = isScraping && sessionId
-      ? {
-          id: sessionId,
-          started_at: sessions.find((s) => s.id === sessionId)?.started_at ?? new Date().toISOString(),
-          finished_at: null,
-          total_accounts: liveStats.totalAccounts,
-          success_count: liveStats.success,
-          error_count: liveStats.error,
-          deleted_count: liveStats.deleted,
-          status: isPaused ? "running" : "running",
-        }
-      : null;
+    const liveRow: ScrapeSession | null =
+      isScraping && sessionId
+        ? {
+            id: sessionId,
+            started_at:
+              sessions.find((s) => s.id === sessionId)?.started_at ?? new Date().toISOString(),
+            finished_at: null,
+            total_accounts: liveStats.totalAccounts,
+            success_count: liveStats.success,
+            error_count: liveStats.error,
+            deleted_count: liveStats.deleted,
+            status: isPaused ? "running" : "running",
+          }
+        : null;
 
     if (!liveRow) return sessions;
     const exists = sessions.some((s) => s.id === sessionId);
     return exists
-      ? sessions.map((s) => s.id === sessionId ? liveRow : s)
+      ? sessions.map((s) => (s.id === sessionId ? liveRow : s))
       : [liveRow, ...sessions];
   }, [sessions, isScraping, isPaused, sessionId, liveStats]);
 
@@ -71,7 +75,12 @@ export default function Logs() {
             <h2 className="text-xl font-semibold tracking-tight">Scrape Logs</h2>
             {connected ? (
               <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                <span className={cn("size-1.5 rounded-full", isScraping ? "bg-green-500 animate-pulse" : "bg-green-500")} />
+                <span
+                  className={cn(
+                    "size-1.5 rounded-full",
+                    isScraping ? "bg-green-500 animate-pulse" : "bg-green-500",
+                  )}
+                />
                 {isScraping ? "Live" : "Connected"}
               </span>
             ) : (
@@ -81,7 +90,9 @@ export default function Logs() {
               </span>
             )}
           </div>
-          <p className="text-sm text-muted-foreground mt-1">Historical scrape runs and real-time activity</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Historical scrape runs and real-time activity
+          </p>
         </div>
         <ScrapeControls isPaused={isPaused} isScraping={isScraping} onTrigger={triggerScrape} />
       </div>
@@ -108,10 +119,7 @@ export default function Logs() {
           </div>
         </div>
       ) : (
-        <SessionsTable
-          sessions={displaySessions}
-          onViewLogs={(s) => sessionDetailDialog.open(s)}
-        />
+        <SessionsTable sessions={displaySessions} onViewLogs={(s) => sessionDetailDialog.open(s)} />
       )}
 
       <SessionDetailDialog

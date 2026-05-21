@@ -6,11 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -63,7 +59,12 @@ export function AccountsTable({
         cell: ({ row }) => {
           const id = row.getValue<string | null>("instagram_id");
           return (
-            <span className={cn("font-mono text-xs", id ? "text-muted-foreground" : "text-muted-foreground/40")}>
+            <span
+              className={cn(
+                "font-mono text-xs",
+                id ? "text-muted-foreground" : "text-muted-foreground/40",
+              )}
+            >
               {id ?? "—"}
             </span>
           );
@@ -103,7 +104,11 @@ export function AccountsTable({
         header: "Regions",
         cell: ({ row }) => {
           const n = row.getValue<number>("region_count");
-          return <Badge variant={n > 0 ? "outline" : "ghost"} className="tabular-nums">{n}</Badge>;
+          return (
+            <Badge variant={n > 0 ? "outline" : "ghost"} className="tabular-nums">
+              {n}
+            </Badge>
+          );
         },
       },
       {
@@ -126,32 +131,41 @@ export function AccountsTable({
           return (
             <div className="flex items-center justify-end gap-1">
               <Button
-                variant="ghost" size="xs"
+                variant="ghost"
+                size="xs"
                 onClick={() => onManageRegions(account)}
                 className="gap-1 text-muted-foreground hover:text-foreground"
                 aria-label={`Manage regions for @${account.username}`}
               >
-                <MapPin className="size-3" />Regions
+                <MapPin className="size-3" />
+                Regions
               </Button>
               <Button
-                variant="ghost" size="xs"
+                variant="ghost"
+                size="xs"
                 onClick={() => onSyncRow(account.username)}
                 disabled={isSyncing}
                 className="gap-1 text-muted-foreground hover:text-foreground"
                 aria-label={`Sync Instagram ID for @${account.username}`}
               >
-                {isSyncing ? <Loader2 className="size-3 animate-spin" /> : <RefreshCcw className="size-3" />}
+                {isSyncing ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : (
+                  <RefreshCcw className="size-3" />
+                )}
                 Sync ID
               </Button>
               <Button
-                variant="ghost" size="icon-xs"
+                variant="ghost"
+                size="icon-xs"
                 onClick={() => onEdit(account)}
                 aria-label={`Edit @${account.username}`}
               >
                 <Pencil className="size-3" />
               </Button>
               <Button
-                variant="ghost" size="icon-xs"
+                variant="ghost"
+                size="icon-xs"
                 onClick={() => onDelete(account)}
                 className="hover:text-destructive hover:bg-destructive/10"
                 aria-label={`Delete @${account.username}`}
@@ -217,7 +231,10 @@ export function AccountRegionsDialog({
 }: AccountRegionsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl p-0 flex flex-col gap-0 overflow-hidden" style={{ maxHeight: "85vh" }}>
+      <DialogContent
+        className="sm:max-w-3xl p-0 flex flex-col gap-0 overflow-hidden"
+        style={{ maxHeight: "85vh" }}
+      >
         <div className="px-6 pt-6 pb-4 border-b border-border shrink-0">
           <div>
             <h2 className="text-base font-semibold leading-none">@{account?.username}</h2>
@@ -230,7 +247,8 @@ export function AccountRegionsDialog({
           </div>
           <div className="mt-3">
             <Button
-              size="sm" variant="outline"
+              size="sm"
+              variant="outline"
               onClick={onOpenSelector}
               disabled={unassignedRegions.length === 0}
             >
@@ -248,7 +266,9 @@ export function AccountRegionsDialog({
             <div className="flex flex-col items-center py-12 gap-2 text-center px-6">
               <MapPin className="size-8 text-muted-foreground/30" />
               <p className="text-sm text-muted-foreground">Not assigned to any region</p>
-              <p className="text-xs text-muted-foreground/60">Click "Assign to Region" to add this account to regions</p>
+              <p className="text-xs text-muted-foreground/60">
+                Click "Assign to Region" to add this account to regions
+              </p>
             </div>
           ) : (
             <Table>
@@ -263,10 +283,13 @@ export function AccountRegionsDialog({
                 {accountRegions.map((ar) => (
                   <TableRow key={ar.id}>
                     <TableCell className="font-medium">{ar.region_name}</TableCell>
-                    <TableCell className="text-muted-foreground">{ar.province_name ?? "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {ar.province_name ?? "—"}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button
-                        variant="ghost" size="xs"
+                        variant="ghost"
+                        size="xs"
                         onClick={() => onRemoveRegion(ar.region_id, ar.account_id, ar.region_name)}
                         className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       >
@@ -327,7 +350,11 @@ export function RegionSelectorDialog({
   function toggle(id: number) {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   }
@@ -356,8 +383,16 @@ export function RegionSelectorDialog({
   const allFilteredSelected = filtered.length > 0 && filtered.every((r) => selected.has(r.id));
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
-      <DialogContent className="sm:max-w-3xl p-0 flex flex-col gap-0 overflow-hidden" style={{ maxHeight: "85vh" }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) handleClose();
+      }}
+    >
+      <DialogContent
+        className="sm:max-w-3xl p-0 flex flex-col gap-0 overflow-hidden"
+        style={{ maxHeight: "85vh" }}
+      >
         <div className="px-6 pt-6 pb-4 border-b border-border shrink-0">
           <h2 className="text-base font-semibold leading-none">{title}</h2>
           {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
@@ -423,16 +458,20 @@ export function RegionSelectorDialog({
         <div className="px-6 py-4 border-t border-border shrink-0">
           <DialogFooter>
             <div className="flex items-center gap-2 mr-auto">
-              {selected.size > 0 && (
-                <Badge variant="secondary">{selected.size} selected</Badge>
-              )}
+              {selected.size > 0 && <Badge variant="secondary">{selected.size} selected</Badge>}
             </div>
-            <Button variant="outline" onClick={handleClose}>Cancel</Button>
+            <Button variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
             <Button onClick={handleAdd} disabled={selected.size === 0 || adding}>
-              {adding
-                ? <><Loader2 className="size-4 animate-spin" />Adding...</>
-                : `Assign to ${selected.size > 0 ? selected.size : ""} Region${selected.size !== 1 ? "s" : ""}`
-              }
+              {adding ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                `Assign to ${selected.size > 0 ? selected.size : ""} Region${selected.size !== 1 ? "s" : ""}`
+              )}
             </Button>
           </DialogFooter>
         </div>
@@ -446,7 +485,9 @@ function CheckboxIcon({ checked }: { checked: boolean }) {
     <span
       className={cn(
         "flex size-4 shrink-0 items-center justify-center rounded border transition-colors",
-        checked ? "bg-primary border-primary text-primary-foreground" : "border-border bg-background",
+        checked
+          ? "bg-primary border-primary text-primary-foreground"
+          : "border-border bg-background",
       )}
       aria-hidden
     >

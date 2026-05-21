@@ -1,7 +1,11 @@
 import { okResults, ok, err, serverErr } from "@/utils/response";
 import { logger } from "@/utils/logger";
 import { getParams } from "@/utils/request";
-import { findRecentSessions, findLogsBySession, findSessionById } from "@/repositories/scrape-log.repo";
+import {
+  findRecentSessions,
+  findLogsBySession,
+  findSessionById,
+} from "@/repositories/scrape-log.repo";
 import { scrapeLogService } from "@/services/scrape-log.service";
 
 export async function scrapeStatusGet(): Promise<Response> {

@@ -1,16 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-// ─── Shared primitives ────────────────────────────────────────────────────────
-
-function SkeletonText({ className }: { className?: string }) {
-  return <Skeleton className={cn("h-3.5 rounded", className)} />;
-}
-
-function SkeletonBadge({ className }: { className?: string }) {
-  return <Skeleton className={cn("h-5 w-14 rounded-full", className)} />;
-}
-
 // ─── Generic DataTable skeleton ───────────────────────────────────────────────
 
 interface TableSkeletonProps {
@@ -24,7 +14,10 @@ function TableSkeleton({ rows = 9, cols }: TableSkeletonProps) {
       {/* Header */}
       <div className="flex items-center gap-4 px-5 h-11 border-b border-border bg-muted/30">
         {cols.map((col, i) => (
-          <Skeleton key={i} className={cn("h-3 rounded", col.flex ? "flex-1" : col.width ?? "w-20")} />
+          <Skeleton
+            key={i}
+            className={cn("h-3 rounded", col.flex ? "flex-1" : (col.width ?? "w-20"))}
+          />
         ))}
       </div>
       {/* Rows */}
@@ -37,7 +30,11 @@ function TableSkeleton({ rows = 9, cols }: TableSkeletonProps) {
           )}
         >
           {cols.map((col, i) => (
-            <Skeleton key={i} className={cn("h-3.5 rounded", col.flex ? "flex-1" : col.width ?? "w-24")} style={{ opacity: 1 - r * 0.06 }} />
+            <Skeleton
+              key={i}
+              className={cn("h-3.5 rounded", col.flex ? "flex-1" : (col.width ?? "w-24"))}
+              style={{ opacity: 1 - r * 0.06 }}
+            />
           ))}
         </div>
       ))}
@@ -64,10 +61,11 @@ export function DashboardSkeleton() {
 
       {/* Stat cards row */}
       <div className="grid grid-cols-5 gap-3">
-        {[
-          "col-span-3", "col-span-2", "col-span-2", "col-span-2", "col-span-3",
-        ].map((span, i) => (
-          <div key={i} className={cn("rounded-2xl border border-border bg-card p-5 space-y-3", span)}>
+        {["col-span-3", "col-span-2", "col-span-2", "col-span-2", "col-span-3"].map((span, i) => (
+          <div
+            key={i}
+            className={cn("rounded-2xl border border-border bg-card p-5 space-y-3", span)}
+          >
             <div className="flex items-start justify-between">
               <Skeleton className="h-3.5 w-24 rounded" />
               <Skeleton className="size-9 rounded-xl" />

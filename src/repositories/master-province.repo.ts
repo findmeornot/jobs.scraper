@@ -1,5 +1,5 @@
 import { db } from "@/db/index";
-import type { MasterProvince } from "@/types/index";
+import type { MasterProvince } from "../types";
 
 export async function findAllProvinces(activeOnly = false): Promise<MasterProvince[]> {
   if (activeOnly) {

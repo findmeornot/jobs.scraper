@@ -42,7 +42,8 @@ export function ScrapeControls({ isPaused, isScraping, onTrigger }: ScrapeContro
   async function handleReset() {
     const ok = await confirm({
       title: "Stop and reset?",
-      description: "The scrape will be stopped and all content scraped in this session will be deleted (excluding confirmed items).",
+      description:
+        "The scrape will be stopped and all content scraped in this session will be deleted (excluding confirmed items).",
       variant: "destructive",
       confirmLabel: "Stop & Delete",
     });
@@ -57,21 +58,37 @@ export function ScrapeControls({ isPaused, isScraping, onTrigger }: ScrapeContro
     return (
       <>
         {isPaused ? (
-          <Button variant="outline" size="xs" onClick={handleResume} disabled={controlling} className="gap-1">
-            <Play className="size-3" />Resume
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={handleResume}
+            disabled={controlling}
+            className="gap-1"
+          >
+            <Play className="size-3" />
+            Resume
           </Button>
         ) : (
-          <Button variant="outline" size="xs" onClick={handlePause} disabled={controlling} className="gap-1">
-            <Pause className="size-3" />Pause
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={handlePause}
+            disabled={controlling}
+            className="gap-1"
+          >
+            <Pause className="size-3" />
+            Pause
           </Button>
         )}
         <Button
-          variant="outline" size="xs"
+          variant="outline"
+          size="xs"
           onClick={handleReset}
           disabled={controlling}
           className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
         >
-          <RotateCcw className="size-3" />Reset
+          <RotateCcw className="size-3" />
+          Reset
         </Button>
       </>
     );
@@ -79,12 +96,24 @@ export function ScrapeControls({ isPaused, isScraping, onTrigger }: ScrapeContro
 
   return (
     <Button size="sm" onClick={onTrigger} disabled={isScraping}>
-      {isScraping
-        ? isPaused
-          ? <><Pause className="size-4" />Paused</>
-          : <><Loader2 className="size-4 animate-spin" />Scraping…</>
-        : <><Play className="size-4" />Trigger Scrape</>
-      }
+      {isScraping ? (
+        isPaused ? (
+          <>
+            <Pause className="size-4" />
+            Paused
+          </>
+        ) : (
+          <>
+            <Loader2 className="size-4 animate-spin" />
+            Scraping…
+          </>
+        )
+      ) : (
+        <>
+          <Play className="size-4" />
+          Trigger Scrape
+        </>
+      )}
     </Button>
   );
 }

@@ -4,6 +4,7 @@ import { getAllAccounts, removeAccount } from "@/services/instagram-account.serv
 import { saveInstagramContent } from "@/services/instagram-content.service";
 import { scrapeLogService } from "@/services/scrape-log.service";
 import { subtractDays, now } from "@/utils/date";
+import { logger } from "@/utils/logger";
 
 interface AccountState {
   status: 0 | 1;
@@ -68,7 +69,7 @@ async function saveState(state: ScrapeState): Promise<void> {
 
 export async function scrapeAllExternalAccounts(): Promise<void> {
   if (scrapeLogService.isScraping) {
-    console.log("Scrape already in progress, skipping.");
+    logger.info("Scrape already in progress, skipping.");
     return;
   }
 
@@ -80,12 +81,24 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
 
     const allDone = Object.values(state.accounts).every((a) => a.status === 1);
     if (allDone) {
-      await scrapeLogService.log(sessionId, "info", "All accounts already processed today, skipping.");
-      await scrapeLogService.endSession(sessionId, { totalAccounts: externalAccounts.length, successCount: 0, errorCount: 0, deletedCount: 0 }, "completed");
+      await scrapeLogService.log(
+        sessionId,
+        "info",
+        "All accounts already processed today, skipping.",
+      );
+      await scrapeLogService.endSession(
+        sessionId,
+        { totalAccounts: externalAccounts.length, successCount: 0, errorCount: 0, deletedCount: 0 },
+        "completed",
+      );
       return;
     }
 
-    await scrapeLogService.log(sessionId, "info", `Starting scrape of ${externalAccounts.length} external accounts`);
+    await scrapeLogService.log(
+      sessionId,
+      "info",
+      `Starting scrape of ${externalAccounts.length} external accounts`,
+    );
     state.scrape_status = { last_run: now().toISOString(), is_completed: false };
     await saveState(state);
 
@@ -110,7 +123,9 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
       }
 
       if (!account.instagram_id) {
-        await scrapeLogService.log(sessionId, "warn", `Skipped — no Instagram ID`, { username: account.username });
+        await scrapeLogService.log(sessionId, "warn", `Skipped — no Instagram ID`, {
+          username: account.username,
+        });
         continue;
       }
 
@@ -129,7 +144,7 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
             });
             totalContent++;
           } catch (err) {
-            console.error(`Error saving post ${post.shortcode}:`, err);
+            logger.error({ shortcode: post.shortcode, error: err }, "Error saving post");
           }
         }
 
@@ -145,10 +160,12 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("User not found or private")) {
-          await scrapeLogService.log(sessionId, "warn", `Not found or private — deleted`, { username: account.username });
+          await scrapeLogService.log(sessionId, "warn", `Not found or private — deleted`, {
+            username: account.username,
+          });
           deletedCount++;
           await removeAccount(account.id).catch((e) =>
-            console.error(`Failed to delete @${account.username}:`, e),
+            logger.error({ username: account.username, error: e }, "Failed to delete account"),
           );
         } else {
           errorCount++;
@@ -167,18 +184,30 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
       `Scrape complete — ${successCount} success, ${errorCount} errors, ${deletedCount} deleted, ${totalContent} new posts`,
     );
     const endStatus = scrapeLogService.stopRequested ? "failed" : "completed";
-    await scrapeLogService.endSession(sessionId, { totalAccounts: externalAccounts.length, successCount, errorCount, deletedCount }, endStatus);
+    await scrapeLogService.endSession(
+      sessionId,
+      { totalAccounts: externalAccounts.length, successCount, errorCount, deletedCount },
+      endStatus,
+    );
   } catch (err) {
-    console.error("Content cron error:", err);
-    await scrapeLogService.log(sessionId, "error", `Scrape failed: ${err instanceof Error ? err.message : String(err)}`);
-    await scrapeLogService.endSession(sessionId, { totalAccounts: 0, successCount: 0, errorCount: 1, deletedCount: 0 }, "failed");
+    logger.error({ error: err }, "Content cron error");
+    await scrapeLogService.log(
+      sessionId,
+      "error",
+      `Scrape failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    await scrapeLogService.endSession(
+      sessionId,
+      { totalAccounts: 0, successCount: 0, errorCount: 1, deletedCount: 0 },
+      "failed",
+    );
   }
 }
 
 export default function initContentCron(): void {
   cron.schedule("0 17 * * *", async () => {
-    console.log(`[${now().format("YYYY-MM-DD HH:mm:ss")}] Starting content cron...`);
+    logger.info("Starting content cron");
     await scrapeAllExternalAccounts();
   });
-  console.log("Content cron registered: daily at 17:00");
+  logger.info("Content cron registered: daily at 17:00");
 }

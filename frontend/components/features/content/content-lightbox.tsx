@@ -8,7 +8,12 @@ interface ContentLightboxProps {
 
 export function ContentLightbox({ url, onClose }: ContentLightboxProps) {
   return (
-    <Dialog open={!!url} onOpenChange={(o) => { if (!o) onClose(); }}>
+    <Dialog
+      open={!!url}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
       <DialogContent
         className="p-0 border-0 bg-transparent shadow-none max-w-none w-auto"
         showCloseButton={false}

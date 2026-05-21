@@ -1,15 +1,11 @@
 import { useState, useMemo } from "react";
 import { Search, Check, Users, Loader2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { Account } from "@/hooks/use-accounts";
+import type { Account } from "@/types";
 
 interface AccountSelectorProps {
   open: boolean;
@@ -46,7 +42,11 @@ export function AccountSelector({
   function toggle(id: number) {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   }
@@ -75,11 +75,15 @@ export function AccountSelector({
     onOpenChange(false);
   }
 
-  const allFilteredSelected =
-    filtered.length > 0 && filtered.every((a) => selected.has(a.id));
+  const allFilteredSelected = filtered.length > 0 && filtered.every((a) => selected.has(a.id));
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) handleClose();
+      }}
+    >
       <DialogContent
         className="sm:max-w-3xl p-0 flex flex-col gap-0 overflow-hidden"
         style={{ maxHeight: "85vh" }}
@@ -87,9 +91,7 @@ export function AccountSelector({
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b border-border shrink-0">
           <h2 className="text-base font-semibold leading-none">{title}</h2>
-          {description && (
-            <p className="text-sm text-muted-foreground mt-1">{description}</p>
-          )}
+          {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
           <div className="relative mt-3">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -151,7 +153,10 @@ export function AccountSelector({
                         )}
                       </p>
                     </div>
-                    <Badge variant={account.is_external ? "outline" : "secondary"} className="shrink-0">
+                    <Badge
+                      variant={account.is_external ? "outline" : "secondary"}
+                      className="shrink-0"
+                    >
                       {account.is_external ? "Ext" : "Int"}
                     </Badge>
                   </button>
@@ -165,14 +170,17 @@ export function AccountSelector({
         <div className="px-6 py-4 border-t border-border shrink-0">
           <DialogFooter>
             <div className="flex items-center gap-2 mr-auto">
-              {selected.size > 0 && (
-                <Badge variant="secondary">{selected.size} selected</Badge>
-              )}
+              {selected.size > 0 && <Badge variant="secondary">{selected.size} selected</Badge>}
             </div>
-            <Button variant="outline" onClick={handleClose}>Cancel</Button>
+            <Button variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
             <Button onClick={handleAdd} disabled={selected.size === 0 || adding}>
               {adding ? (
-                <><Loader2 className="size-4 animate-spin" />Adding...</>
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Adding...
+                </>
               ) : (
                 `Add ${selected.size > 0 ? selected.size : ""} Account${selected.size !== 1 ? "s" : ""}`
               )}
@@ -189,7 +197,9 @@ function Checkbox({ checked }: { checked: boolean }) {
     <span
       className={cn(
         "flex size-4 shrink-0 items-center justify-center rounded border transition-colors",
-        checked ? "bg-primary border-primary text-primary-foreground" : "border-border bg-background",
+        checked
+          ? "bg-primary border-primary text-primary-foreground"
+          : "border-border bg-background",
       )}
       aria-hidden
     >

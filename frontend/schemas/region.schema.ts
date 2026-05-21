@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const regionSchema = z.object({
   name: z.string().min(1, "Name is required").trim(),
-  province_id: z.number({ required_error: "Province is required" }).int().positive("Province is required"),
+  province_id: z.number({ message: "Province is required" }).int().positive("Province is required"),
   group_id: z.number().int().positive().nullable().optional(),
   js_loker: z.number().int().positive().nullable().optional(),
 });

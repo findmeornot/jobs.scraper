@@ -1,5 +1,5 @@
 import { db } from "@/db/index";
-import type { InstagramContent, ContentRow } from "@/types/index";
+import type { InstagramContent, ContentRow } from "../types";
 
 export async function findContentByInstagramId(
   instagramId: number,
@@ -19,7 +19,13 @@ export async function findContentWithRelations(id: number): Promise<
     })
   | null
 > {
-  const rows = await db<any[]>`
+  type Row = InstagramContent & {
+    account_username: string;
+    region_id: number | null;
+    province_id: number | null;
+    js_loker: number | null;
+  };
+  const rows = await db<Row[]>`
     SELECT ic.*,
            ia.username as account_username,
            mr.id as region_id,
@@ -91,7 +97,7 @@ export async function deleteContentSince(since: Date): Promise<number> {
     DELETE FROM instagram_content
     WHERE created_at >= ${since} AND confirmed_at IS NULL
   `;
-  return Number((result as any).affectedRows ?? 0);
+  return Number((result as unknown as { affectedRows?: number }).affectedRows ?? 0);
 }
 
 export async function getContentGroupedByGroup(filters: {
@@ -122,10 +128,7 @@ export async function getContentGroupedByGroup(filters: {
   `;
 }
 
-export async function getContentByGroup(
-  groupId: number,
-  date: string,
-): Promise<ContentRow[]> {
+export async function getContentByGroup(groupId: number, date: string): Promise<ContentRow[]> {
   return db<ContentRow[]>`
     SELECT
       mg.id as group_id, mg.name as group_name,
@@ -175,7 +178,14 @@ export async function getGroupsWithContentStats(date: string): Promise<
     has_manual_input: number;
   }>
 > {
-  return db<any[]>`
+  type StatsRow = {
+    group_id: number;
+    group_name: string;
+    content_count: number;
+    confirmed_count: number;
+    has_manual_input: number;
+  };
+  return db<StatsRow[]>`
     SELECT
       mg.id as group_id,
       mg.name as group_name,
@@ -238,7 +248,14 @@ export async function getDashboardStats(): Promise<{
   confirmed_content: number;
   external_accounts: number;
 }> {
-  const rows = await db<any[]>`
+  type StatsResult = {
+    total_accounts: number;
+    external_accounts: number;
+    total_content: number;
+    pending_content: number;
+    confirmed_content: number;
+  };
+  const rows = await db<StatsResult[]>`
     SELECT
       (SELECT COUNT(*) FROM instagram_account WHERE is_active = 1) as total_accounts,
       (SELECT COUNT(*) FROM instagram_account WHERE is_external = 1 AND is_active = 1) as external_accounts,
@@ -246,11 +263,13 @@ export async function getDashboardStats(): Promise<{
       (SELECT COUNT(*) FROM instagram_content WHERE confirmed_at IS NULL AND rejected_at IS NULL) as pending_content,
       (SELECT COUNT(*) FROM instagram_content WHERE confirmed_at IS NOT NULL) as confirmed_content
   `;
-  return rows[0] ?? {
-    total_accounts: 0,
-    total_content: 0,
-    pending_content: 0,
-    confirmed_content: 0,
-    external_accounts: 0,
-  };
+  return (
+    rows[0] ?? {
+      total_accounts: 0,
+      total_content: 0,
+      pending_content: 0,
+      confirmed_content: 0,
+      external_accounts: 0,
+    }
+  );
 }

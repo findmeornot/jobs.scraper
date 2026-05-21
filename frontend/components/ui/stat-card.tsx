@@ -19,23 +19,13 @@ const COLOR_MAP: Record<ColorVariant, string> = {
   default: "bg-muted text-muted-foreground",
 };
 
-export default function StatCard({
-  label,
-  value,
-  icon: Icon,
-  color = "default",
-}: StatCardProps) {
+export default function StatCard({ label, value, icon: Icon, color = "default" }: StatCardProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {label}
-        </CardTitle>
+        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
         <div
-          className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-md",
-            COLOR_MAP[color],
-          )}
+          className={cn("flex h-8 w-8 items-center justify-center rounded-md", COLOR_MAP[color])}
           aria-hidden="true"
         >
           <Icon className="size-4" />

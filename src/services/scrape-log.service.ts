@@ -4,7 +4,6 @@ import {
   finishSession,
   insertLog,
   type ScrapeLogEntry,
-  type ScrapeSession,
 } from "@/repositories/scrape-log.repo";
 
 let _isScraping = false;
@@ -24,11 +23,21 @@ function broadcastState() {
 }
 
 export const scrapeLogService = {
-  get isScraping() { return _isScraping; },
-  get isPaused() { return _isPaused; },
-  get stopRequested() { return _stopRequested; },
-  get currentSessionId() { return _currentSessionId; },
-  get sessionStartedAt() { return _sessionStartedAt; },
+  get isScraping() {
+    return _isScraping;
+  },
+  get isPaused() {
+    return _isPaused;
+  },
+  get stopRequested() {
+    return _stopRequested;
+  },
+  get currentSessionId() {
+    return _currentSessionId;
+  },
+  get sessionStartedAt() {
+    return _sessionStartedAt;
+  },
 
   currentState() {
     return {
@@ -48,13 +57,22 @@ export const scrapeLogService = {
     _stopRequested = false;
     _currentSessionId = id;
     broadcastState();
-    wsManager.broadcast({ type: "session_start", sessionId: id, startedAt: _sessionStartedAt.toISOString() });
+    wsManager.broadcast({
+      type: "session_start",
+      sessionId: id,
+      startedAt: _sessionStartedAt.toISOString(),
+    });
     return id;
   },
 
   async endSession(
     id: string,
-    stats: { totalAccounts: number; successCount: number; errorCount: number; deletedCount: number },
+    stats: {
+      totalAccounts: number;
+      successCount: number;
+      errorCount: number;
+      deletedCount: number;
+    },
     status: "completed" | "failed" = "completed",
   ): Promise<void> {
     await finishSession(id, { ...stats, status });

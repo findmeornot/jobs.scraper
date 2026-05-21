@@ -15,59 +15,82 @@ interface GroupsTabProps {
   onViewDetails: (group: Group) => void;
 }
 
-export function GroupsTab({ groups, regions, tabChips, onEdit, onDelete, onViewDetails }: GroupsTabProps) {
-  const columns: ColumnDef<Group>[] = useMemo(() => [
-    {
-      accessorKey: "name",
-      header: "Name",
-      cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
-    },
-    {
-      accessorKey: "is_active",
-      header: "Status",
-      enableSorting: false,
-      cell: ({ row }) => {
-        const active = row.getValue<boolean>("is_active");
-        return <Badge variant={active ? "default" : "outline"}>{active ? "Active" : "Inactive"}</Badge>;
+export function GroupsTab({
+  groups,
+  regions,
+  tabChips,
+  onEdit,
+  onDelete,
+  onViewDetails,
+}: GroupsTabProps) {
+  const columns: ColumnDef<Group>[] = useMemo(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => <span className="font-medium">{row.getValue("name")}</span>,
       },
-    },
-    {
-      id: "region_count",
-      header: "Regions",
-      enableSorting: false,
-      cell: ({ row }) => {
-        const count = regions.filter((r) => r.group_id === row.original.id).length;
-        return <Badge variant={count > 0 ? "secondary" : "ghost"} className="tabular-nums">{count}</Badge>;
+      {
+        accessorKey: "is_active",
+        header: "Status",
+        enableSorting: false,
+        cell: ({ row }) => {
+          const active = row.getValue<boolean>("is_active");
+          return (
+            <Badge variant={active ? "default" : "outline"}>{active ? "Active" : "Inactive"}</Badge>
+          );
+        },
       },
-    },
-    {
-      id: "actions",
-      header: () => null,
-      enableSorting: false,
-      size: 120,
-      cell: ({ row }) => {
-        const g = row.original;
-        return (
-          <div className="flex items-center justify-end gap-1">
-            <Button variant="ghost" size="xs" onClick={() => onViewDetails(g)} className="gap-1">
-              <FolderOpen className="size-3" />Details
-            </Button>
-            <Button variant="ghost" size="icon-xs" onClick={() => onEdit(g)} aria-label={`Edit ${g.name}`}>
-              <Pencil className="size-3" />
-            </Button>
-            <Button
-              variant="ghost" size="icon-xs"
-              onClick={() => onDelete(g)}
-              className="hover:text-destructive hover:bg-destructive/10"
-              aria-label={`Delete ${g.name}`}
-            >
-              <Trash2 className="size-3" />
-            </Button>
-          </div>
-        );
+      {
+        id: "region_count",
+        header: "Regions",
+        enableSorting: false,
+        cell: ({ row }) => {
+          const count = regions.filter((r) => r.group_id === row.original.id).length;
+          return (
+            <Badge variant={count > 0 ? "secondary" : "ghost"} className="tabular-nums">
+              {count}
+            </Badge>
+          );
+        },
       },
-    },
-  ], [regions, onEdit, onDelete, onViewDetails]);
+      {
+        id: "actions",
+        header: () => null,
+        enableSorting: false,
+        size: 120,
+        cell: ({ row }) => {
+          const g = row.original;
+          return (
+            <div className="flex items-center justify-end gap-1">
+              <Button variant="ghost" size="xs" onClick={() => onViewDetails(g)} className="gap-1">
+                <FolderOpen className="size-3" />
+                Details
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => onEdit(g)}
+                aria-label={`Edit ${g.name}`}
+              >
+                <Pencil className="size-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => onDelete(g)}
+                className="hover:text-destructive hover:bg-destructive/10"
+                aria-label={`Delete ${g.name}`}
+              >
+                <Trash2 className="size-3" />
+              </Button>
+            </div>
+          );
+        },
+      },
+    ],
+    [regions, onEdit, onDelete, onViewDetails],
+  );
 
   if (groups.length === 0) {
     return (
@@ -79,7 +102,9 @@ export function GroupsTab({ groups, regions, tabChips, onEdit, onDelete, onViewD
           </div>
           <div>
             <p className="text-sm font-medium">No groups yet</p>
-            <p className="text-xs text-muted-foreground mt-1">Create groups to categorize content</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Create groups to categorize content
+            </p>
           </div>
         </div>
       </>

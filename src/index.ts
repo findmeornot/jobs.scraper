@@ -23,7 +23,10 @@ async function bootstrap(): Promise<void> {
     startServer();
     initCrons();
 
-    logger.info({ timezone: process.env.TZ, now: dayjs().format("YYYY-MM-DD HH:mm:ss Z") }, "Bootstrap complete");
+    logger.info(
+      { timezone: process.env.TZ, now: dayjs().format("YYYY-MM-DD HH:mm:ss Z") },
+      "Bootstrap complete",
+    );
   } catch (error) {
     logger.error({ error }, "Bootstrap failed");
     process.exit(1);

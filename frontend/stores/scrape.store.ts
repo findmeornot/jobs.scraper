@@ -35,8 +35,6 @@ export const useScrapeStore = create<ScrapeState & ScrapeActions>((set) => ({
   clearLogs: () => set({ liveLogs: [] }),
 
   dispatchContentProcessed: (detail) => {
-    window.dispatchEvent(
-      new CustomEvent<ContentProcessedDetail>("content:processed", { detail }),
-    );
+    window.dispatchEvent(new CustomEvent<ContentProcessedDetail>("content:processed", { detail }));
   },
 }));

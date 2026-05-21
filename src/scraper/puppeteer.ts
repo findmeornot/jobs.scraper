@@ -1,7 +1,6 @@
 import puppeteer, { type PuppeteerLaunchOptions } from "puppeteer";
 import { instagramConfig } from "@/config/instagram";
 import { urlToBase64 } from "@/utils/image";
-import { fromUnix } from "@/utils/date";
 import type { ScrapedProfile, ScrapedPost, ScrapedPostsResponse } from "./types";
 import { extractCountsFromHtml } from "@/services/instagram-id.service";
 
@@ -25,13 +24,17 @@ export async function puppeteerProfileId(username: string): Promise<ScrapedProfi
   try {
     const page = await browser.newPage();
     await page.setUserAgent(instagramConfig.userAgent);
-    await page.goto(`${instagramConfig.baseUrl}/${username}/`, { waitUntil: "networkidle2", timeout: 30_000 });
+    await page.goto(`${instagramConfig.baseUrl}/${username}/`, {
+      waitUntil: "networkidle2",
+      timeout: 30_000,
+    });
 
     const content = await page.content();
 
-    const idMatch = content.match(/"profilePage_(\d+)"/) ??
-                    content.match(/"profile_id":"(\d+)"/) ??
-                    content.match(/"user_id":"(\d+)"/);
+    const idMatch =
+      content.match(/"profilePage_(\d+)"/) ??
+      content.match(/"profile_id":"(\d+)"/) ??
+      content.match(/"user_id":"(\d+)"/);
     if (!idMatch?.[1]) throw new Error(`Could not find user ID for @${username}`);
 
     const { followers, following } = extractCountsFromHtml(content);
@@ -77,17 +80,15 @@ export async function puppeteerHashtag(
       Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
     });
 
-    await page.goto(
-      `${instagramConfig.baseUrl}/explore/search/keyword/?q=%23${hashtag}`,
-      { waitUntil: "networkidle0", timeout: 30000 },
-    );
+    await page.goto(`${instagramConfig.baseUrl}/explore/search/keyword/?q=%23${hashtag}`, {
+      waitUntil: "networkidle0",
+      timeout: 30000,
+    });
 
     await page.waitForSelector("article", { timeout: 30000, visible: true });
 
     const rawPosts = await page.evaluate(() => {
-      const images = document.querySelectorAll(
-        "div.PolarisPhoto._aagv img.PolarisResponsiveImage",
-      );
+      const images = document.querySelectorAll("div.PolarisPhoto._aagv img.PolarisResponsiveImage");
       const data: Array<{ shortcode: string; display_url: string; text: string }> = [];
       images.forEach((img) => {
         if (img instanceof HTMLImageElement) {
@@ -114,7 +115,10 @@ export async function puppeteerHashtag(
             const script = document.querySelector('script[type="application/ld+json"]');
             if (!script) return null;
             const json = JSON.parse(script.textContent ?? "{}");
-            return { created_at: json.uploadDate ?? new Date().toISOString(), id: json.identifier ?? "" };
+            return {
+              created_at: json.uploadDate ?? new Date().toISOString(),
+              id: json.identifier ?? "",
+            };
           });
 
           await postPage.close();
@@ -137,8 +141,7 @@ export async function puppeteerHashtag(
     );
 
     const valid = enriched.filter(
-      (p): p is ScrapedPost =>
-        p !== null && (!afterDate || new Date(p.created_at) >= afterDate),
+      (p): p is ScrapedPost => p !== null && (!afterDate || new Date(p.created_at) >= afterDate),
     );
 
     const limited = first ? valid.slice(0, first) : valid;

@@ -2,8 +2,19 @@ import { z } from "zod";
 import { ok, okResults, err, serverErr } from "@/utils/response";
 import { logger } from "@/utils/logger";
 import { getParams, parseBody } from "@/utils/request";
-import { findAllRegions, findRegionsWithDetails, findRegionById, createRegion, updateRegion, deleteRegion } from "@/repositories/master-region.repo";
-import { findRegionAccountsByRegionId, addAccountToRegion, removeAccountFromRegion } from "@/repositories/region-account.repo";
+import {
+  findAllRegions,
+  findRegionsWithDetails,
+  findRegionById,
+  createRegion,
+  updateRegion,
+  deleteRegion,
+} from "@/repositories/master-region.repo";
+import {
+  findRegionAccountsByRegionId,
+  addAccountToRegion,
+  removeAccountFromRegion,
+} from "@/repositories/region-account.repo";
 
 const regionSchema = z.object({
   name: z.string().min(1, "name is required"),

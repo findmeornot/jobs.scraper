@@ -1,7 +1,14 @@
 import { useState } from "react";
 import {
-  Check, X, CheckCircle2, Loader2, ImageOff, ExternalLink,
-  ChevronDown, ChevronUp, AlertCircle,
+  Check,
+  X,
+  CheckCircle2,
+  Loader2,
+  ImageOff,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  AlertCircle,
 } from "lucide-react";
 import dayjs from "dayjs";
 import { Button } from "@/components/ui/button";
@@ -43,7 +50,14 @@ interface ContentCardProps {
   pending: boolean;
 }
 
-export function ContentCard({ item, reviewer, onConfirm, onReject, onLightbox, pending }: ContentCardProps) {
+export function ContentCard({
+  item,
+  reviewer,
+  onConfirm,
+  onReject,
+  onLightbox,
+  pending,
+}: ContentCardProps) {
   const [captionExpanded, setCaptionExpanded] = useState(false);
 
   const isConfirmed = !!item.confirmed_at;
@@ -67,22 +81,51 @@ export function ContentCard({ item, reviewer, onConfirm, onReject, onLightbox, p
           onClick={() => onLightbox(item.display_url)}
         />
         {isConfirmed && (
-          <div className={cn(
-            "absolute inset-0 flex items-end justify-start p-2",
-            hasCdcUrl ? "bg-green-500/15" : isFailed ? "bg-destructive/10" : isProcessing ? "bg-yellow-500/10" : "bg-muted/20",
-          )}>
-            <Badge className={cn(
-              "text-white text-[10px] gap-1 backdrop-blur-sm",
-              hasCdcUrl ? "bg-green-600/90" : isFailed ? "bg-destructive/90" : isProcessing ? "bg-yellow-600/90" : "bg-foreground/60",
-            )}>
-              {hasCdcUrl
-                ? <><CheckCircle2 className="size-2.5" />Published</>
+          <div
+            className={cn(
+              "absolute inset-0 flex items-end justify-start p-2",
+              hasCdcUrl
+                ? "bg-green-500/15"
                 : isFailed
-                ? <><AlertCircle className="size-2.5" />Failed</>
-                : isProcessing
-                ? <><Loader2 className="size-2.5 animate-spin" />Processing</>
-                : <><CheckCircle2 className="size-2.5" />Confirmed</>
-              }
+                  ? "bg-destructive/10"
+                  : isProcessing
+                    ? "bg-yellow-500/10"
+                    : "bg-muted/20",
+            )}
+          >
+            <Badge
+              className={cn(
+                "text-white text-[10px] gap-1 backdrop-blur-sm",
+                hasCdcUrl
+                  ? "bg-green-600/90"
+                  : isFailed
+                    ? "bg-destructive/90"
+                    : isProcessing
+                      ? "bg-yellow-600/90"
+                      : "bg-foreground/60",
+              )}
+            >
+              {hasCdcUrl ? (
+                <>
+                  <CheckCircle2 className="size-2.5" />
+                  Published
+                </>
+              ) : isFailed ? (
+                <>
+                  <AlertCircle className="size-2.5" />
+                  Failed
+                </>
+              ) : isProcessing ? (
+                <>
+                  <Loader2 className="size-2.5 animate-spin" />
+                  Processing
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="size-2.5" />
+                  Confirmed
+                </>
+              )}
             </Badge>
           </div>
         )}
@@ -110,7 +153,12 @@ export function ContentCard({ item, reviewer, onConfirm, onReject, onLightbox, p
 
         {item.caption ? (
           <div className="flex-1">
-            <p className={cn("text-xs text-foreground/75 leading-relaxed break-words", !captionExpanded && "line-clamp-3")}>
+            <p
+              className={cn(
+                "text-xs text-foreground/75 leading-relaxed break-words",
+                !captionExpanded && "line-clamp-3",
+              )}
+            >
               {item.caption}
             </p>
             {item.caption.length > 120 && (
@@ -118,10 +166,17 @@ export function ContentCard({ item, reviewer, onConfirm, onReject, onLightbox, p
                 className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-0.5 mt-0.5"
                 onClick={() => setCaptionExpanded((v) => !v)}
               >
-                {captionExpanded
-                  ? <><ChevronUp className="size-3" />Less</>
-                  : <><ChevronDown className="size-3" />More</>
-                }
+                {captionExpanded ? (
+                  <>
+                    <ChevronUp className="size-3" />
+                    Less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="size-3" />
+                    More
+                  </>
+                )}
               </button>
             )}
           </div>
@@ -138,11 +193,16 @@ export function ContentCard({ item, reviewer, onConfirm, onReject, onLightbox, p
                 onClick={() => onConfirm(item.id)}
                 disabled={!reviewer || pending}
               >
-                {pending ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+                {pending ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : (
+                  <Check className="size-3" />
+                )}
                 Confirm
               </Button>
               <Button
-                size="sm" variant="outline"
+                size="sm"
+                variant="outline"
                 className="h-8 px-2.5 text-xs hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
                 onClick={() => onReject(item.id)}
                 disabled={pending}
@@ -157,7 +217,10 @@ export function ContentCard({ item, reviewer, onConfirm, onReject, onLightbox, p
             </div>
           ) : isFailed ? (
             <div className="space-y-1.5">
-              <p className="text-[10px] text-destructive flex items-start gap-1" title={item.processingError}>
+              <p
+                className="text-[10px] text-destructive flex items-start gap-1"
+                title={item.processingError}
+              >
                 <AlertCircle className="size-3 shrink-0 mt-px" />
                 <span className="truncate">{item.processingError}</span>
               </p>
@@ -168,10 +231,12 @@ export function ContentCard({ item, reviewer, onConfirm, onReject, onLightbox, p
                   onClick={() => onConfirm(item.id)}
                   disabled={!reviewer || pending}
                 >
-                  <Check className="size-3" />Retry
+                  <Check className="size-3" />
+                  Retry
                 </Button>
                 <Button
-                  size="sm" variant="outline"
+                  size="sm"
+                  variant="outline"
                   className="h-8 px-2.5 text-xs hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
                   onClick={() => onReject(item.id)}
                   disabled={pending}

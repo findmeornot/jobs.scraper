@@ -57,12 +57,24 @@ export default function Dashboard() {
             <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
           </Button>
           <Button size="sm" onClick={triggerScrape} disabled={isScraping}>
-            {isScraping
-              ? isPaused
-                ? <><Pause className="size-4" />Paused</>
-                : <><Loader2 className="size-4 animate-spin" />Scraping...</>
-              : <><Play className="size-4" />Trigger Scrape</>
-            }
+            {isScraping ? (
+              isPaused ? (
+                <>
+                  <Pause className="size-4" />
+                  Paused
+                </>
+              ) : (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Scraping...
+                </>
+              )
+            ) : (
+              <>
+                <Play className="size-4" />
+                Trigger Scrape
+              </>
+            )}
           </Button>
         </div>
       </div>

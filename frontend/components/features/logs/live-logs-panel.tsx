@@ -5,22 +5,27 @@ import { cn } from "@/lib/utils";
 import type { LiveLogEntry } from "@/types";
 
 const LOG_LEVEL_ICON: Record<LiveLogEntry["level"], React.ReactNode> = {
-  info:    <Info className="size-3 text-blue-500 shrink-0" />,
-  warn:    <AlertTriangle className="size-3 text-yellow-500 shrink-0" />,
-  error:   <XCircle className="size-3 text-destructive shrink-0" />,
+  info: <Info className="size-3 text-blue-500 shrink-0" />,
+  warn: <AlertTriangle className="size-3 text-yellow-500 shrink-0" />,
+  error: <XCircle className="size-3 text-destructive shrink-0" />,
   success: <CheckCircle2 className="size-3 text-green-500 shrink-0" />,
 };
 
 const LOG_LEVEL_CLASS: Record<LiveLogEntry["level"], string> = {
-  info:    "text-foreground",
-  warn:    "text-yellow-600 dark:text-yellow-400",
-  error:   "text-destructive",
+  info: "text-foreground",
+  warn: "text-yellow-600 dark:text-yellow-400",
+  error: "text-destructive",
   success: "text-green-600 dark:text-green-400",
 };
 
 function LogLine({ entry }: { entry: LiveLogEntry }) {
   return (
-    <div className={cn("flex items-start gap-2 py-1.5 px-3 text-xs font-mono border-b border-border/50 last:border-0", LOG_LEVEL_CLASS[entry.level])}>
+    <div
+      className={cn(
+        "flex items-start gap-2 py-1.5 px-3 text-xs font-mono border-b border-border/50 last:border-0",
+        LOG_LEVEL_CLASS[entry.level],
+      )}
+    >
       <span className="text-muted-foreground/50 shrink-0 tabular-nums mt-px">
         {dayjs(entry.created_at).format("HH:mm:ss")}
       </span>
@@ -55,7 +60,12 @@ export function LiveLogsPanel({ liveLogs, isPaused, sessionId, controls }: LiveL
     <div className="rounded-xl border border-border overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2.5 bg-muted/40 border-b border-border">
         <div className="flex items-center gap-2">
-          <span className={cn("size-2 rounded-full", isPaused ? "bg-yellow-400" : "bg-green-500 animate-pulse")} />
+          <span
+            className={cn(
+              "size-2 rounded-full",
+              isPaused ? "bg-yellow-400" : "bg-green-500 animate-pulse",
+            )}
+          />
           <span className="text-xs font-medium">
             {isPaused ? "Paused" : "Live"} — Session {sessionId?.slice(0, 8)}…
           </span>

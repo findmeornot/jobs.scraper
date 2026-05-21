@@ -1,5 +1,5 @@
 import { db } from "@/db/index";
-import type { MasterRegion } from "@/types/index";
+import type { MasterRegion } from "../types";
 
 export async function findAllRegions(): Promise<MasterRegion[]> {
   return db<MasterRegion[]>`SELECT * FROM master_region ORDER BY name ASC`;
@@ -33,7 +33,11 @@ export async function findRegionsWithDetails(): Promise<
     }
   >
 > {
-  return db<any[]>`
+  return db<
+    Array<
+      MasterRegion & { province_name: string; group_name: string | null; account_count: number }
+    >
+  >`
     SELECT
       mr.*,
       mp.name as province_name,
@@ -91,9 +95,7 @@ export async function deleteRegion(id: number): Promise<void> {
   await db`DELETE FROM master_region WHERE id = ${id}`;
 }
 
-export async function getRandomRegionByGroupId(
-  groupId: number,
-): Promise<MasterRegion | null> {
+export async function getRandomRegionByGroupId(groupId: number): Promise<MasterRegion | null> {
   const rows = await db<MasterRegion[]>`
     SELECT * FROM master_region WHERE group_id = ${groupId}
     ORDER BY RAND() LIMIT 1

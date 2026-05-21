@@ -12,15 +12,20 @@ interface GroupSectionProps {
   onLightbox: (url: string) => void;
 }
 
-function GroupSection({ group, reviewer, pendingIds, onConfirm, onReject, onLightbox }: GroupSectionProps) {
+function GroupSection({
+  group,
+  reviewer,
+  pendingIds,
+  onConfirm,
+  onReject,
+  onLightbox,
+}: GroupSectionProps) {
   const confirmed = group.content.filter((c) => c.confirmed_at !== null).length;
   const total = group.content.length;
 
   if (total === 0) {
     return (
-      <div className="text-center py-8 text-sm text-muted-foreground">
-        No content in this group
-      </div>
+      <div className="text-center py-8 text-sm text-muted-foreground">No content in this group</div>
     );
   }
 
@@ -28,7 +33,9 @@ function GroupSection({ group, reviewer, pendingIds, onConfirm, onReject, onLigh
     <div className="space-y-3">
       <div className="flex items-center gap-3">
         <h3 className="text-sm font-semibold">{group.name}</h3>
-        <span className="text-xs text-muted-foreground">{confirmed}/{total} confirmed</span>
+        <span className="text-xs text-muted-foreground">
+          {confirmed}/{total} confirmed
+        </span>
         <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
           <div
             className="h-full bg-green-500 rounded-full transition-all"

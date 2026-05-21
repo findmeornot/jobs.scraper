@@ -2,7 +2,12 @@ import { z } from "zod";
 import { ok, okResults, err, serverErr } from "@/utils/response";
 import { logger } from "@/utils/logger";
 import { getParams, parseBody } from "@/utils/request";
-import { getAllAccounts, saveOrUpdateAccount, editAccount, removeAccount } from "@/services/instagram-account.service";
+import {
+  getAllAccounts,
+  saveOrUpdateAccount,
+  editAccount,
+  removeAccount,
+} from "@/services/instagram-account.service";
 import { resolveInstagramId, syncMissingIds } from "@/services/instagram-id.service";
 import { fetchUserInfo } from "@/scraper/fetch";
 import { instagramConfig } from "@/config/instagram";
@@ -46,8 +51,13 @@ export async function profilePost(req: Request): Promise<Response> {
 }
 
 export async function profileSyncIds(): Promise<Response> {
-  syncMissingIds().catch((e) => logger.error({ error: e }, "profileSyncIds background sync failed"));
-  return Response.json({ success: true, message: "ID sync started in background" }, { status: 202 });
+  syncMissingIds().catch((e) =>
+    logger.error({ error: e }, "profileSyncIds background sync failed"),
+  );
+  return Response.json(
+    { success: true, message: "ID sync started in background" },
+    { status: 202 },
+  );
 }
 
 export async function profilePut(req: Request): Promise<Response> {
@@ -94,19 +104,45 @@ async function processUsername(username: string) {
     const profile = await resolveInstagramId(username);
     const { id: profileId, followers, following } = profile;
 
-    if (instagramConfig.sessionId && instagramConfig.sessionId.length > 0 && profileId && followers === 0) {
+    if (
+      instagramConfig.sessionId &&
+      instagramConfig.sessionId.length > 0 &&
+      profileId &&
+      followers === 0
+    ) {
       try {
         const info = await fetchUserInfo(profileId, instagramConfig.sessionId);
-        await saveOrUpdateAccount({ instagram_id: profileId, username, followers: info.follower_count, following: info.following_count });
-        return { success: true, userId: profileId, username, followers: String(info.follower_count), following: String(info.following_count) };
+        await saveOrUpdateAccount({
+          instagram_id: profileId,
+          username,
+          followers: info.follower_count,
+          following: info.following_count,
+        });
+        return {
+          success: true,
+          userId: profileId,
+          username,
+          followers: String(info.follower_count),
+          following: String(info.following_count),
+        };
       } catch {
         // session info fetch failed — fall through to basic save
       }
     }
 
     await saveOrUpdateAccount({ instagram_id: profileId, username, followers, following });
-    return { success: true, userId: profileId, username, followers: String(followers), following: String(following) };
+    return {
+      success: true,
+      userId: profileId,
+      username,
+      followers: String(followers),
+      following: String(following),
+    };
   } catch (error) {
-    return { success: false, username, error: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      success: false,
+      username,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }

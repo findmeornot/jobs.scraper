@@ -1,9 +1,13 @@
 import { z } from "zod";
 import { ok, err, serverErr } from "@/utils/response";
 import { logger } from "@/utils/logger";
-import { getParams, parseBody } from "@/utils/request";
-import { getContentForReview, saveInstagramContent } from "@/services/instagram-content.service";
-import { saveManualContent, confirmContent, rejectContent } from "@/repositories/instagram-content.repo";
+import { parseBody } from "@/utils/request";
+import { getContentForReview } from "@/services/instagram-content.service";
+import {
+  saveManualContent,
+  confirmContent,
+  rejectContent,
+} from "@/repositories/instagram-content.repo";
 import { getRandomRegionByGroupId } from "@/repositories/master-region.repo";
 import { createManualAccount } from "@/repositories/instagram-account.repo";
 import { processContentInBackground } from "@/services/content-processing.service";
@@ -67,15 +71,21 @@ export async function contentPost(req: Request): Promise<Response> {
 
 export async function contentScrape(_req: Request): Promise<Response> {
   if (scrapeLogService.isScraping) {
-    return Response.json({ success: false, message: "A scrape is already in progress" }, { status: 409 });
+    return Response.json(
+      { success: false, message: "A scrape is already in progress" },
+      { status: 409 },
+    );
   }
   logger.info("Manual scrape triggered");
   void scrapeAllExternalAccounts();
-  return Response.json({
-    success: true,
-    message: "Instagram scraping process started",
-    started_at: new Date().toISOString(),
-  }, { status: 202 });
+  return Response.json(
+    {
+      success: true,
+      message: "Instagram scraping process started",
+      started_at: new Date().toISOString(),
+    },
+    { status: 202 },
+  );
 }
 
 export async function contentSubmit(req: Request): Promise<Response> {
@@ -104,7 +114,11 @@ export async function contentSubmit(req: Request): Promise<Response> {
         .map(async (file) => {
           const filename = await saveUploadedFile(file, "storage/contents");
           const display_url = `${appConfig.url}/api/instagram/content/file/${filename}`;
-          return saveManualContent({ display_url, account_id: account.id, posted_at: new Date(date) });
+          return saveManualContent({
+            display_url,
+            account_id: account.id,
+            posted_at: new Date(date),
+          });
         }),
     );
 

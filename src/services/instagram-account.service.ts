@@ -7,11 +7,9 @@ import {
   updateAccount,
   deleteAccount as deleteAccountRepo,
 } from "@/repositories/instagram-account.repo";
-import type { InstagramAccount } from "@/types/index";
+import type { InstagramAccount } from "../types";
 
-export async function getAccountByUsername(
-  username: string,
-): Promise<InstagramAccount | null> {
+export async function getAccountByUsername(username: string): Promise<InstagramAccount | null> {
   return findAccountByUsername(username);
 }
 

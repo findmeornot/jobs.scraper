@@ -1,4 +1,7 @@
-import { findContentWithRelations, updateContentRemoteUrl } from "@/repositories/instagram-content.repo";
+import {
+  findContentWithRelations,
+  updateContentRemoteUrl,
+} from "@/repositories/instagram-content.repo";
 import { buildCdcPayload, forwardToCdc } from "@/services/cdc.service";
 import { wsManager } from "@/ws/manager";
 import { logger } from "@/utils/logger";
@@ -23,7 +26,13 @@ export async function processContentInBackground(contentId: number): Promise<voi
 
     if (!payload.nama) {
       logger.info({ contentId }, `${tag} no company name extracted — skipping CDC`);
-      wsManager.broadcast({ type: "content_processed", contentId, remoteUrl: null, skipped: true, skipReason: "no company name extracted" });
+      wsManager.broadcast({
+        type: "content_processed",
+        contentId,
+        remoteUrl: null,
+        skipped: true,
+        skipReason: "no company name extracted",
+      });
       return;
     }
 

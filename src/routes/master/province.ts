@@ -2,7 +2,13 @@ import { z } from "zod";
 import { ok, okResults, err, serverErr } from "@/utils/response";
 import { logger } from "@/utils/logger";
 import { getParams, parseBody } from "@/utils/request";
-import { findAllProvinces, findProvinceById, createProvince, updateProvince, deleteProvince } from "@/repositories/master-province.repo";
+import {
+  findAllProvinces,
+  findProvinceById,
+  createProvince,
+  updateProvince,
+  deleteProvince,
+} from "@/repositories/master-province.repo";
 
 const provinceSchema = z.object({
   name: z.string().min(1, "name is required"),
@@ -40,7 +46,11 @@ export async function provincePut(req: Request): Promise<Response> {
     const raw = await parseBody(req);
     const parsed = provinceSchema.partial().safeParse(raw);
     if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
-    await updateProvince(id, parsed.data);
+    const { is_active, ...rest } = parsed.data;
+    await updateProvince(id, {
+      ...rest,
+      is_active: is_active !== undefined ? Boolean(is_active) : undefined,
+    });
     const updated = await findProvinceById(id);
     return ok(updated);
   } catch (error) {

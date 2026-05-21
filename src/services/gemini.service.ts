@@ -1,7 +1,7 @@
 import { geminiConfig } from "@/config/gemini";
 import { logger } from "@/utils/logger";
 import { findAllCategories, findCategoriesByIds } from "@/repositories/master-category.repo";
-import type { GeminiJobData } from "@/types/index";
+import type { GeminiJobData } from "../types";
 
 const DEFAULT_PROMPT = `RESPOND WITH ONLY A JSON OBJECT. NO OTHER TEXT.
 
@@ -40,10 +40,7 @@ const DEFAULT_RESPONSE: GeminiJobData = {
 
 const VALID_EDUCATION = ["SMP", "SMA/SMK", "D1/D2/D3", "D4", "S1", "S2", "S3", "Umum"] as const;
 
-export async function analyzeJobPoster(
-  imageUrl: string,
-  caption?: string,
-): Promise<GeminiJobData> {
+export async function analyzeJobPoster(imageUrl: string, caption?: string): Promise<GeminiJobData> {
   try {
     const categories = await findAllCategories();
     const categoryList = categories.map((c) => `${c.id}: ${c.name}`).join("\n");
@@ -92,7 +89,10 @@ async function callGeminiApi(imageUrl: string, prompt: string): Promise<string> 
 }
 
 function cleanJsonResponse(text: string): string {
-  let cleaned = text.trim().replace(/```json\n?|\n?```/g, "").trim();
+  let cleaned = text
+    .trim()
+    .replace(/```json\n?|\n?```/g, "")
+    .trim();
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
   if (start !== -1 && end !== -1 && end > start) {
@@ -105,17 +105,24 @@ function cleanJsonResponse(text: string): string {
 
 function createFallbackResponse(text: string): string {
   // Phone: must contain actual digits (min 6)
-  const phoneRaw = text.match(/(?:Phone|WhatsApp|WA|Telp|HP)\s*:?\s*([\d\s\-+()\[\]]{6,})/i)?.[1]?.trim() ?? null;
+  const phoneRaw =
+    text.match(/(?:Phone|WhatsApp|WA|Telp|HP)\s*:?\s*([\d\s\-+()\[\]]{6,})/i)?.[1]?.trim() ?? null;
   const phone = phoneRaw && /\d{5,}/.test(phoneRaw) ? phoneRaw : null;
 
-  const education = text.match(
-    /(?:Pendidikan|Education|Lulusan)\s*:?\s*((?:S\d|D\d|SMA|SMK|SMP|Bachelor|Master|PhD)[^,\n]{0,30})/i,
-  )?.[1]?.trim() ?? null;
+  const education =
+    text
+      .match(
+        /(?:Pendidikan|Education|Lulusan)\s*:?\s*((?:S\d|D\d|SMA|SMK|SMP|Bachelor|Master|PhD)[^,\n]{0,30})/i,
+      )?.[1]
+      ?.trim() ?? null;
 
   // Area: require at least a city/word after the keyword, not just "Kerja:"
-  const areaRaw = text.match(
-    /(?:Lokasi|Wilayah|Domisili|Penempatan\s+Kerja|Location)\s*:?\s*([A-Za-z][^,\n]{2,40})/i,
-  )?.[1]?.trim() ?? null;
+  const areaRaw =
+    text
+      .match(
+        /(?:Lokasi|Wilayah|Domisili|Penempatan\s+Kerja|Location)\s*:?\s*([A-Za-z][^,\n]{2,40})/i,
+      )?.[1]
+      ?.trim() ?? null;
   const area = areaRaw && !areaRaw.toLowerCase().startsWith("kerja") ? areaRaw : null;
 
   return JSON.stringify({

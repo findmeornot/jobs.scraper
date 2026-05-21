@@ -17,34 +17,34 @@ async function runMigrations() {
 
     const migrationsDir = join(import.meta.dir, "..", "migrations");
     const files = await readdir(migrationsDir);
-    const sqlFiles = files.filter(f => f.endsWith('.sql')).sort();
+    const sqlFiles = files.filter((f) => f.endsWith(".sql")).sort();
 
     for (const file of sqlFiles) {
       const existing = await db`SELECT id FROM \`_migrations\` WHERE name = ${file}`;
-      
+
       if (existing.length === 0) {
         console.log(`Applying migration: ${file}...`);
         const filePath = join(migrationsDir, file);
         const schema = await Bun.file(filePath).text();
-        
+
         const statements = schema
-          .split(';')
-          .map(stmt => stmt.trim())
-          .filter(stmt => stmt.length > 0);
-          
+          .split(";")
+          .map((stmt) => stmt.trim())
+          .filter((stmt) => stmt.length > 0);
+
         for (const statement of statements) {
           if (statement) {
             await db.unsafe(statement);
           }
         }
-        
+
         await db`INSERT INTO \`_migrations\` (name) VALUES (${file})`;
         console.log(`Migration ${file} applied successfully.`);
       } else {
         console.log(`Migration ${file} already applied, skipping.`);
       }
     }
-    
+
     console.log("All migrations are up to date!");
     process.exit(0);
   } catch (error) {

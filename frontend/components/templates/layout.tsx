@@ -154,9 +154,7 @@ export default function Layout({ children }: LayoutProps) {
             {currentPage && (
               <>
                 <Separator orientation="vertical" className="h-4" />
-                <span className="text-sm text-muted-foreground">
-                  {currentPage.label}
-                </span>
+                <span className="text-sm text-muted-foreground">{currentPage.label}</span>
               </>
             )}
           </header>

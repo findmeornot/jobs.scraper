@@ -8,7 +8,8 @@ export function useScrape() {
 
   const trigger = useMutation({
     mutationFn: () => apiFetch("/api/instagram/content/scrape", { method: "POST" }),
-    onSuccess: () => toast.success("Scraping started!", "Real-time logs available on the Logs page."),
+    onSuccess: () =>
+      toast.success("Scraping started!", "Real-time logs available on the Logs page."),
     onError: (err) => {
       if (err instanceof ApiError && err.status === 409) {
         toast.error("Already running", "A scrape is already in progress.");
@@ -20,6 +21,8 @@ export function useScrape() {
 
   return {
     isScraping,
-    triggerScrape: () => { if (!isScraping) trigger.mutate(); },
+    triggerScrape: () => {
+      if (!isScraping) trigger.mutate();
+    },
   };
 }

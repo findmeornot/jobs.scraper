@@ -1,5 +1,11 @@
-import { saveContent, getContentGroupedByGroup, getGroupsWithContentStats, getEmptyGroupNames, getDashboardStats } from "@/repositories/instagram-content.repo";
-import type { ContentRow } from "@/types/index";
+import {
+  saveContent,
+  getContentGroupedByGroup,
+  getGroupsWithContentStats,
+  getEmptyGroupNames,
+  getDashboardStats,
+} from "@/repositories/instagram-content.repo";
+import type { ContentRow } from "../types";
 
 export async function saveInstagramContent(data: {
   instagram_id?: number | null;
@@ -31,9 +37,15 @@ export async function getContentForReview(filters: {
     if (row.id) groupMap.get(row.group_id)!.content.push(row);
   }
 
-  const groups = Array.from(groupMap.values()).map((g) => ({ ...g, content_count: g.content.length }));
+  const groups = Array.from(groupMap.values()).map((g) => ({
+    ...g,
+    content_count: g.content.length,
+  }));
   const total_content = groups.reduce((s, g) => s + g.content_count, 0);
-  const confirmed = groups.reduce((s, g) => s + g.content.filter((c) => c.confirmed_at !== null).length, 0);
+  const confirmed = groups.reduce(
+    (s, g) => s + g.content.filter((c) => c.confirmed_at !== null).length,
+    0,
+  );
   const empty_groups = groups.filter((g) => g.content_count === 0).map((g) => g.name);
 
   return { groups, total_content, confirmed, empty_groups };

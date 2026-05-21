@@ -2,12 +2,29 @@ import { useState, useMemo } from "react";
 import { Plus, Loader2, Users, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccountManagementSkeleton } from "@/components/ui/skeletons";
-import { useAccounts, useAccountRegions, useAddAccount, useEditAccount, useDeleteAccount, useSyncAccountId, useSyncAllIds, useAddRegionToAccount, useRemoveRegionFromAccount } from "@/hooks/use-accounts";
+import {
+  useAccounts,
+  useAccountRegions,
+  useAddAccount,
+  useEditAccount,
+  useDeleteAccount,
+  useSyncAccountId,
+  useSyncAllIds,
+  useAddRegionToAccount,
+  useRemoveRegionFromAccount,
+} from "@/hooks/use-accounts";
 import { useRegionData } from "@/hooks/use-regions";
 import { useConfirm } from "@/hooks/use-confirm";
 import { useDisclosure } from "@/hooks/use-disclosure";
-import { AccountsTable, AccountRegionsDialog, RegionSelectorDialog } from "@/components/features/accounts/accounts-table";
-import { AddAccountDialog, EditAccountDialog } from "@/components/features/accounts/account-form-dialog";
+import {
+  AccountsTable,
+  AccountRegionsDialog,
+  RegionSelectorDialog,
+} from "@/components/features/accounts/accounts-table";
+import {
+  AddAccountDialog,
+  EditAccountDialog,
+} from "@/components/features/accounts/account-form-dialog";
 import type { Account } from "@/types";
 import type { AccountFormData, EditAccountFormData } from "@/schemas/account.schema";
 
@@ -17,7 +34,6 @@ export default function AccountManagement() {
   const [filter, setFilter] = useState<FilterType>("all");
   const { data: accounts = [], isLoading } = useAccounts(filter);
   const { data: regionData } = useRegionData();
-  const regions = regionData?.regions ?? [];
 
   const addAccount = useAddAccount();
   const editAccount = useEditAccount();
@@ -35,7 +51,7 @@ export default function AccountManagement() {
   const [syncingRows, setSyncingRows] = useState<Set<string>>(new Set());
 
   const { data: accountRegions = [], isLoading: loadingRegions } = useAccountRegions(
-    regionsDialog.isOpen ? regionsDialog.data?.id ?? null : null,
+    regionsDialog.isOpen ? (regionsDialog.data?.id ?? null) : null,
   );
 
   const assignedRegionIds = useMemo(
@@ -43,14 +59,15 @@ export default function AccountManagement() {
     [accountRegions],
   );
   const unassignedRegions = useMemo(
-    () => regions.filter((r) => !assignedRegionIds.has(r.id)),
-    [regions, assignedRegionIds],
+    () => (regionData?.regions ?? []).filter((r) => !assignedRegionIds.has(r.id)),
+    [regionData?.regions, assignedRegionIds],
   );
 
   async function handleSyncAll() {
     const ok = await confirm({
       title: "Sync all Instagram IDs?",
-      description: "All accounts will be re-synced. Accounts that cannot be resolved will be permanently deleted.",
+      description:
+        "All accounts will be re-synced. Accounts that cannot be resolved will be permanently deleted.",
       confirmLabel: "Sync & Delete unresolvable",
       variant: "destructive",
     });
@@ -60,7 +77,11 @@ export default function AccountManagement() {
   async function handleSyncRow(username: string) {
     setSyncingRows((prev) => new Set(prev).add(username));
     await syncId.mutateAsync(username).catch(() => {});
-    setSyncingRows((prev) => { const n = new Set(prev); n.delete(username); return n; });
+    setSyncingRows((prev) => {
+      const n = new Set(prev);
+      n.delete(username);
+      return n;
+    });
   }
 
   async function handleAdd(data: AccountFormData): Promise<boolean> {
@@ -108,14 +129,20 @@ export default function AccountManagement() {
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-foreground">Accounts</h2>
-          <p className="text-sm text-muted-foreground mt-1">Manage Instagram accounts for scraping</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage Instagram accounts for scraping
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleSyncAll} disabled={syncAll.isPending}>
-            {syncAll.isPending ? <Loader2 className="size-4 animate-spin" /> : <RefreshCcw className="size-4" />}
+            {syncAll.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <RefreshCcw className="size-4" />
+            )}
             Sync All IDs
           </Button>
-          <Button onClick={addDialog.open} size="sm">
+          <Button onClick={() => addDialog.open()} size="sm">
             <Plus className="size-4" />
             Add Account
           </Button>
@@ -129,9 +156,11 @@ export default function AccountManagement() {
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">No accounts yet</p>
-            <p className="text-xs text-muted-foreground mt-1">Add your first Instagram account to start scraping</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Add your first Instagram account to start scraping
+            </p>
           </div>
-          <Button size="sm" onClick={addDialog.open}>
+          <Button size="sm" onClick={() => addDialog.open()}>
             <Plus className="size-4" />
             Add Account
           </Button>

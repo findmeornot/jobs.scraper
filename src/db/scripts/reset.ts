@@ -3,7 +3,7 @@ import { db } from "../index.ts";
 async function resetDatabase() {
   try {
     console.log("Resetting database...");
-    
+
     // Disable foreign key checks
     await db.unsafe("SET FOREIGN_KEY_CHECKS = 0");
 

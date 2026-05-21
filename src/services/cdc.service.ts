@@ -1,5 +1,5 @@
 import { analyzeJobPoster } from "@/services/gemini.service";
-import type { GeminiJobData } from "@/types/index";
+import type { GeminiJobData } from "../types";
 
 export interface CdcPayload {
   key_kode: string;
@@ -57,8 +57,7 @@ export async function buildCdcPayload(
 }
 
 export async function forwardToCdc(payload: CdcPayload): Promise<string> {
-  const cdcUrl =
-    process.env.CDC_API_URL ?? "https://cdc.stekom.ac.id/curl_loker/loker_masal_save";
+  const cdcUrl = process.env.CDC_API_URL ?? "https://cdc.stekom.ac.id/curl_loker/loker_masal_save";
 
   const formData = new FormData();
   for (const [key, value] of Object.entries(payload)) {

@@ -1,5 +1,12 @@
-import { withCors } from "@/routes/cors";
-import { profileGet, profilePost, profileSyncIds, profilePut, profileDelete, profileAccountRegions } from "@/routes/instagram/profile";
+import { withCors } from "@/routes/utils/cors";
+import {
+  profileGet,
+  profilePost,
+  profileSyncIds,
+  profilePut,
+  profileDelete,
+  profileAccountRegions,
+} from "@/routes/instagram/profile";
 import {
   contentGet,
   contentPost,
@@ -26,9 +33,13 @@ import {
   masterGroupPut,
   masterGroupDelete,
 } from "@/routes/master/group";
-import { scrapeStatusGet, scrapeSessionsGet, scrapeSessionLogsGet } from "@/routes/scrape-logs";
-import { scrapeControl } from "@/routes/scrape-control";
-import { imageProxy } from "@/routes/image-proxy";
+import {
+  scrapeStatusGet,
+  scrapeSessionsGet,
+  scrapeSessionLogsGet,
+} from "@/routes/utils/scrape-logs";
+import { scrapeControl } from "@/routes/utils/scrape-control";
+import { imageProxy } from "@/routes/utils/image-proxy";
 import { appConfig } from "@/config/app";
 import { getDashboardStats } from "@/repositories/instagram-content.repo";
 import { serverErr } from "@/utils/response";
@@ -36,7 +47,6 @@ import { wsManager } from "@/ws/manager";
 import { scrapeLogService } from "@/services/scrape-log.service";
 import { logger } from "@/utils/logger";
 
-// @ts-ignore — Bun HTML import
 import frontendIndex from "../frontend/index.html";
 
 const c = withCors;
@@ -69,7 +79,7 @@ export function startServer(): void {
       "/api/scrape/status": { GET: c(scrapeStatusGet) },
       "/api/scrape/control": { POST: c(scrapeControl) },
       "/api/scrape/sessions": { GET: c(scrapeSessionsGet) },
-      "/api/scrape/sessions/:id/logs": { GET: c(scrapeSessionLogsGet as any) },
+      "/api/scrape/sessions/:id/logs": { GET: c(scrapeSessionLogsGet) },
       "/api/instagram/profile": {
         GET: c(profileGet),
         POST: c(profilePost),
@@ -78,11 +88,11 @@ export function startServer(): void {
         POST: c(profileSyncIds),
       },
       "/api/instagram/profile/:id": {
-        PUT: c(profilePut as any),
-        DELETE: c(profileDelete as any),
+        PUT: c(profilePut),
+        DELETE: c(profileDelete),
       },
       "/api/instagram/profile/:id/regions": {
-        GET: c(profileAccountRegions as any),
+        GET: c(profileAccountRegions),
       },
       "/api/instagram/content": {
         GET: c(contentGet),
@@ -94,38 +104,38 @@ export function startServer(): void {
       "/api/instagram/content/file/:filename": { GET: c(contentFileGet) },
       "/api/instagram/group": { GET: c(groupGet) },
       "/api/instagram/group/missing": { GET: c(groupMissingGet) },
-      "/api/instagram/group/:group_id/content": { GET: c(groupContentGet as any) },
+      "/api/instagram/group/:group_id/content": { GET: c(groupContentGet) },
       "/api/instagram/hashtag": { GET: c(hashtagGet) },
       "/api/master/region": {
         GET: c(regionGet),
         POST: c(regionPost),
       },
       "/api/master/region/:id": {
-        PUT: c(regionPut as any),
-        DELETE: c(regionDelete as any),
+        PUT: c(regionPut),
+        DELETE: c(regionDelete),
       },
       "/api/master/region/:id/accounts": {
-        GET: c(regionAccountsGet as any),
-        POST: c(regionAccountAdd as any),
+        GET: c(regionAccountsGet),
+        POST: c(regionAccountAdd),
       },
       "/api/master/region/:id/accounts/:account_id": {
-        DELETE: c(regionAccountRemove as any),
+        DELETE: c(regionAccountRemove),
       },
       "/api/master/province": {
         GET: c(provinceGet),
         POST: c(provincePost),
       },
       "/api/master/province/:id": {
-        PUT: c(provincePut as any),
-        DELETE: c(provinceDelete as any),
+        PUT: c(provincePut),
+        DELETE: c(provinceDelete),
       },
       "/api/master/group": {
         GET: c(masterGroupGet),
         POST: c(masterGroupPost),
       },
       "/api/master/group/:id": {
-        PUT: c(masterGroupPut as any),
-        DELETE: c(masterGroupDelete as any),
+        PUT: c(masterGroupPut),
+        DELETE: c(masterGroupDelete),
       },
       "/ws": (req, server) => {
         if (server.upgrade(req)) return;
