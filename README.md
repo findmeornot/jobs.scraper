@@ -46,7 +46,7 @@ A full-stack Instagram content scraping platform built with **Bun**, **React 19*
 - [PostgreSQL](https://postgresql.org) — primary database
 - [Puppeteer](https://pptr.dev) — fallback Instagram ID resolution
 - [Pino](https://getpino.io) — structured logging
-- [node-cron](https://github.com/node-cron/node-cron) — scheduled jobs
+- [Bun.cron](https://bun.com/docs/runtime/cron) — built-in scheduled jobs (no extra dependency)
 - [Zod](https://zod.dev) — request validation
 
 **Frontend**
@@ -267,7 +267,7 @@ scraper/
 │   │   ├── master/                   # region, province, group
 │   │   └── utils/                    # auth-guard, cors, scrape-control, logs
 │   ├── scraper/                      # Instagram scraping (Puppeteer + fetch strategies)
-│   ├── crons/                        # node-cron scheduled jobs
+│   ├── crons/                        # Bun.cron scheduled jobs
 │   ├── ws/
 │   │   └── manager.ts                # WebSocket client registry + broadcast helper
 │   ├── types/index.ts                # Shared backend types
@@ -458,12 +458,12 @@ All messages are JSON with a `type` discriminator field.
 
 ## Cron Jobs
 
-Both crons run in the **Asia/Jakarta** timezone.
+Both crons use **`Bun.cron`** — Bun's built-in scheduler (no `node-cron` dependency). In-process `Bun.cron` jobs run on **UTC** wall-clock time and never overlap: the next fire time is computed only after the handler fully resolves.
 
-| Schedule | Description |
-|----------|-------------|
-| Daily `00:00` | **Profile updater** — refreshes follower/following counts for active non-external accounts in batches of 30 with 30s between batches |
-| Daily (configurable) | **Content scraper** — scrapes new posts, saves to `instagram_content`, runs Gemini classification |
+| Schedule (UTC) | Description |
+|----------------|-------------|
+| `0 0 * * *` — daily 00:00 | **Profile updater** — refreshes follower/following counts for active non-external accounts in batches of 30 with 30 s between batches |
+| `0 20 * * *` — daily 20:00 | **Content scraper** — scrapes new posts from all external accounts, saves to `instagram_content`, runs Gemini classification |
 
 ---
 

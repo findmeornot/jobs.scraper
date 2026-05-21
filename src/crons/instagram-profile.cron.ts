@@ -1,4 +1,3 @@
-import cron from "node-cron";
 import { getAllAccounts, saveOrUpdateAccount } from "@/services/instagram-account.service";
 import { scrapeProfile } from "@/scraper/index";
 import { fetchUserInfo } from "@/scraper/fetch";
@@ -76,9 +75,9 @@ export async function updateInstagramProfiles(): Promise<void> {
 }
 
 export default function initProfileCron(): void {
-  cron.schedule("0 0 * * *", async () => {
+  Bun.cron("0 0 * * *", async () => {
     logger.info("Starting profile cron");
     await updateInstagramProfiles();
   });
-  logger.info("Profile cron registered: daily at 00:00");
+  logger.info("Profile cron registered: daily at 00:00 UTC");
 }

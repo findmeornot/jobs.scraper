@@ -1,4 +1,3 @@
-import cron from "node-cron";
 import { scrapePosts } from "@/scraper/index";
 import { getAllAccounts, removeAccount } from "@/services/instagram-account.service";
 import { saveInstagramContent } from "@/services/instagram-content.service";
@@ -205,9 +204,9 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
 }
 
 export default function initContentCron(): void {
-  cron.schedule("0 20 * * *", async () => {
+  Bun.cron("0 20 * * *", async () => {
     logger.info("Starting content cron");
     await scrapeAllExternalAccounts();
   });
-  logger.info("Content cron registered: daily at 20:00");
+  logger.info("Content cron registered: daily at 20:00 UTC");
 }
