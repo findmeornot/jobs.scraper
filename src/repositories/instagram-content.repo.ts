@@ -105,8 +105,32 @@ export async function getContentGroupedByGroup(filters: {
   date?: string;
   showUnverifiedOnly?: boolean;
 }): Promise<ContentRow[]> {
-  const dateVal = filters.date ?? null;
-  const unverifiedFlag = filters.showUnverifiedOnly ? 1 : 0;
+  const { date, showUnverifiedOnly } = filters;
+  const unverifiedFlag = showUnverifiedOnly ? 1 : 0;
+
+  // Avoid passing null as a SQL parameter (causes 42P18 indeterminate_datatype in PG).
+  // Branch so the date condition is only present when a date is actually supplied.
+  if (date) {
+    return db<ContentRow[]>`
+      SELECT
+        mg.id as group_id, mg.name as group_name,
+        mr.id as region_id, mr.name as region_name,
+        ia.id as account_id, ia.username,
+        ic.id, ic.instagram_id, ic.caption, ic.display_url,
+        ic.remote_url, ic.shortcode, ic.posted_at,
+        ic.confirmed_at, ic.rejected_at, ic.action_by,
+        ic.created_at as content_created_at
+      FROM master_group mg
+      LEFT JOIN master_region mr ON mr.group_id = mg.id
+      LEFT JOIN region_account ra ON ra.region_id = mr.id
+      LEFT JOIN instagram_account ia ON ia.id = ra.account_id
+      LEFT JOIN instagram_content ic ON ic.account_id = ia.id
+        AND ic.rejected_at IS NULL
+        AND ic.created_at::date = ${date}::date
+        AND (${unverifiedFlag} = 0 OR ic.confirmed_at IS NULL)
+      ORDER BY mg.name ASC, ia.username ASC, ic.posted_at DESC
+    `;
+  }
 
   return db<ContentRow[]>`
     SELECT
@@ -123,7 +147,6 @@ export async function getContentGroupedByGroup(filters: {
     LEFT JOIN instagram_account ia ON ia.id = ra.account_id
     LEFT JOIN instagram_content ic ON ic.account_id = ia.id
       AND ic.rejected_at IS NULL
-      AND (${dateVal} IS NULL OR CAST(ic.created_at AS DATE) = CAST(${dateVal} AS DATE))
       AND (${unverifiedFlag} = 0 OR ic.confirmed_at IS NULL)
     ORDER BY mg.name ASC, ia.username ASC, ic.posted_at DESC
   `;
@@ -145,7 +168,7 @@ export async function getContentByGroup(groupId: number, date: string): Promise<
     JOIN instagram_account ia ON ia.id = ra.account_id
     JOIN instagram_content ic ON ic.account_id = ia.id
       AND ic.rejected_at IS NULL
-      AND CAST(ic.created_at AS DATE) = CAST(${date} AS DATE)
+      AND ic.created_at::date = ${date}::date
     WHERE mg.id = ${groupId}
     ORDER BY ic.posted_at DESC
   `;
@@ -199,7 +222,7 @@ export async function getGroupsWithContentStats(date: string): Promise<
     LEFT JOIN instagram_account ia ON ia.id = ra.account_id
     LEFT JOIN instagram_content ic ON ic.account_id = ia.id
       AND ic.rejected_at IS NULL
-      AND CAST(ic.created_at AS DATE) = CAST(${date} AS DATE)
+      AND ic.created_at::date = ${date}::date
     GROUP BY mg.id, mg.name
     ORDER BY
       CASE WHEN COUNT(ic.id) = 0 THEN 1 ELSE 0 END ASC,
@@ -220,7 +243,7 @@ export async function getEmptyGroupNames(date?: string): Promise<string[]> {
           JOIN instagram_account ia ON ia.id = ra.account_id
           JOIN instagram_content ic ON ic.account_id = ia.id
             AND ic.rejected_at IS NULL
-            AND CAST(ic.created_at AS DATE) = CAST(${date} AS DATE)
+            AND ic.created_at::date = ${date}::date
         )
         ORDER BY mg.name ASC
       `
