@@ -44,7 +44,17 @@ async function bootstrap(): Promise<void> {
       "Bootstrap complete",
     );
   } catch (error) {
-    logger.error({ error }, "Bootstrap failed");
+    const e = error as Record<string, unknown>;
+    logger.error(
+      {
+        name: e?.name,
+        message: e?.message,
+        code: e?.code,
+        errno: e?.errno,
+        sqlState: e?.sqlState,
+      },
+      "Bootstrap failed",
+    );
     process.exit(1);
   }
 }
