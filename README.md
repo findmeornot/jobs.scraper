@@ -13,6 +13,7 @@ A full-stack Instagram content scraping platform built with **Bun**, **React 19*
 - [Environment Variables](#environment-variables)
 - [Database](#database)
 - [Running](#running)
+- [Deployment & Network](#deployment--network)
 - [Project Structure](#project-structure)
 - [API Reference](#api-reference)
 - [WebSocket Events](#websocket-events)
@@ -197,6 +198,42 @@ bun run format
 
 # Type check
 bun run typecheck
+```
+
+---
+
+## Deployment & Network
+
+The app runs on a **KVM server**. During scrape jobs it routes outbound Instagram requests through a proxy that lives on the **haiboss** local-network machine, exposed publicly via a **Cloudflare Tunnel**.
+
+```
+KVM Server (this app)
+      │
+      │  PROXY_URL  ──────────────────────────────────────┐
+      ▼                                                    ▼
+Instagram API / CDN          Cloudflare Tunnel (public URL)
+                                        │
+                                        ▼
+                               haiboss (local network)
+                               └── proxy server (e.g. Squid / custom)
+```
+
+All Instagram fetch calls made by the scraper (profile page, web API, image downloads) are forwarded through this proxy. The Cloudflare Tunnel means haiboss needs no open inbound ports — it initiates the outbound tunnel connection itself.
+
+### Proxy configuration
+
+Set `PROXY_URL` to the Cloudflare Tunnel public URL of the haiboss proxy, and `PROXY_API_KEY` if the proxy requires authentication:
+
+```env
+PROXY_URL=https://<tunnel-subdomain>.trycloudflare.com
+PROXY_API_KEY=your_key_here
+```
+
+### Production start
+
+```bash
+# On the KVM server — migrations run automatically before the server starts
+bun run start
 ```
 
 ---
