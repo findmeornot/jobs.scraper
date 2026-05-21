@@ -35,8 +35,8 @@ export async function findAllAccounts(filters?: {
     SELECT ia.*, COUNT(ra.id) as region_count
     FROM instagram_account ia
     LEFT JOIN region_account ra ON ra.account_id = ia.id
-    WHERE (${extFilter} IS NULL OR ia.is_external = ${extFilter})
-      AND (${activeFilter} IS NULL OR ia.is_active = ${activeFilter})
+    WHERE (${extFilter}::int IS NULL OR ia.is_external = ${extFilter})
+      AND (${activeFilter}::int IS NULL OR ia.is_active = ${activeFilter})
     GROUP BY ia.id
     ORDER BY ia.created_at DESC
   `;
