@@ -1,5 +1,6 @@
 import { err, serverErr } from "@/utils/response";
 import { scrapeHashtag } from "@/scraper/index";
+import { logger } from "@/utils/logger";
 
 export async function hashtagGet(req: Request): Promise<Response> {
   try {
@@ -15,7 +16,7 @@ export async function hashtagGet(req: Request): Promise<Response> {
 
     return Response.json({ success: true, ...posts });
   } catch (error) {
-    console.error("hashtagGet error:", error);
+    logger.error({ error }, "hashtagGet error");
     return serverErr("Hashtag scrape failed");
   }
 }

@@ -1,3 +1,4 @@
+import { logger } from "@/utils/logger.ts";
 import { db } from "../index.ts";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
@@ -22,7 +23,7 @@ async function runMigrations() {
       const existing = await db`SELECT id FROM _migrations WHERE name = ${file}`;
 
       if (existing.length === 0) {
-        console.log(`Applying migration: ${file}...`);
+        logger.info(`Applying migration: ${file}...`);
         const filePath = join(migrationsDir, file);
         const schema = await Bun.file(filePath).text();
 
@@ -38,16 +39,16 @@ async function runMigrations() {
         }
 
         await db`INSERT INTO _migrations (name) VALUES (${file})`;
-        console.log(`Migration ${file} applied successfully.`);
+        logger.info(`Migration ${file} applied successfully.`);
       } else {
-        console.log(`Migration ${file} already applied, skipping.`);
+        logger.info(`Migration ${file} already applied, skipping.`);
       }
     }
 
-    console.log("All migrations are up to date!");
+    logger.info("All migrations are up to date!");
     process.exit(0);
   } catch (error) {
-    console.error("Error running migrations:", error);
+    logger.error({ error }, "Error running migrations");
     process.exit(1);
   }
 }

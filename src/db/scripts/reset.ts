@@ -1,8 +1,9 @@
+import { logger } from "@/utils/logger.ts";
 import { db } from "../index.ts";
 
 async function resetDatabase() {
   try {
-    console.log("Resetting database...");
+    logger.info("Resetting database...");
 
     const tables = await db.unsafe(`
       SELECT table_name 
@@ -14,15 +15,15 @@ async function resetDatabase() {
     for (const table of tables as any[]) {
       const tableName = table.table_name ?? table.TABLE_NAME;
       if (tableName) {
-        console.log(`Dropping table ${tableName}...`);
+        logger.info(`Dropping table ${tableName}...`);
         await db.unsafe(`DROP TABLE IF EXISTS "${tableName}" CASCADE`);
       }
     }
 
-    console.log("Database reset complete.");
+    logger.info("Database reset complete.");
     process.exit(0);
   } catch (error) {
-    console.error("Error resetting database:", error);
+    logger.error({ error }, "Error resetting database");
     process.exit(1);
   }
 }

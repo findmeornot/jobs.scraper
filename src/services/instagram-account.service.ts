@@ -8,6 +8,7 @@ import {
   deleteAccount as deleteAccountRepo,
 } from "@/repositories/instagram-account.repo";
 import type { InstagramAccount } from "../types";
+import { logger } from "@/utils/logger";
 
 export async function getAccountByUsername(username: string): Promise<InstagramAccount | null> {
   return findAccountByUsername(username);
@@ -57,7 +58,7 @@ export async function syncMissingInstagramIds(
       const msg = `Failed to process ${account.username}: ${
         error instanceof Error ? error.message : "Unknown error"
       }`;
-      console.error(msg);
+      logger.error({ error }, msg);
       errors.push(msg);
       await new Promise((r) => setTimeout(r, 10000));
     }
