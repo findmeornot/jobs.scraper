@@ -13,6 +13,11 @@ dayjs.tz.setDefault("Asia/Jakarta");
 process.env.TZ = "Asia/Jakarta";
 
 async function bootstrap(): Promise<void> {
+  if (!process.env.PASSWORD) {
+    logger.error("PASSWORD env variable is not set — refusing to start");
+    process.exit(1);
+  }
+
   try {
     await db`SELECT 1`;
     logger.info("Database connected");

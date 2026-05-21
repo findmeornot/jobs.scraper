@@ -1,4 +1,6 @@
 import { withCors } from "@/routes/utils/cors";
+import { withAuth } from "@/routes/utils/auth-guard";
+import { authLogin, authLogout, authMe } from "@/routes/auth";
 import {
   profileGet,
   profilePost,
@@ -60,82 +62,88 @@ export function startServer(): void {
     port: appConfig.port,
     routes: {
       "/": frontendIndex,
+      "/login": frontendIndex,
       "/accounts": frontendIndex,
       "/regions": frontendIndex,
       "/logs": frontendIndex,
       "/content": frontendIndex,
       "/api/health": { GET: () => Response.json({ ok: true, ts: Date.now() }) },
-      "/api/proxy/image": { GET: imageProxy },
+      "/api/auth/login": { POST: authLogin },
+      "/api/auth/logout": { POST: authLogout },
+      "/api/auth/me": { GET: authMe },
+      "/api/proxy/image": { GET: withAuth(imageProxy) },
       "/api/dashboard/stats": {
-        GET: c(async () => {
-          try {
-            const stats = await getDashboardStats();
-            return Response.json({ success: true, data: stats });
-          } catch {
-            return serverErr("Failed to fetch stats");
-          }
-        }),
+        GET: c(
+          withAuth(async () => {
+            try {
+              const stats = await getDashboardStats();
+              return Response.json({ success: true, data: stats });
+            } catch {
+              return serverErr("Failed to fetch stats");
+            }
+          }),
+        ),
       },
-      "/api/scrape/status": { GET: c(scrapeStatusGet) },
-      "/api/scrape/control": { POST: c(scrapeControl) },
-      "/api/scrape/sessions": { GET: c(scrapeSessionsGet) },
-      "/api/scrape/sessions/:id/logs": { GET: c(scrapeSessionLogsGet) },
+      "/api/scrape/status": { GET: c(withAuth(scrapeStatusGet)) },
+      "/api/scrape/control": { POST: c(withAuth(scrapeControl)) },
+      "/api/scrape/sessions": { GET: c(withAuth(scrapeSessionsGet)) },
+      "/api/scrape/sessions/:id/logs": { GET: c(withAuth(scrapeSessionLogsGet)) },
       "/api/instagram/profile": {
-        GET: c(profileGet),
-        POST: c(profilePost),
+        GET: c(withAuth(profileGet)),
+        POST: c(withAuth(profilePost)),
       },
       "/api/instagram/profile/sync-ids": {
-        POST: c(profileSyncIds),
+        POST: c(withAuth(profileSyncIds)),
       },
       "/api/instagram/profile/:id": {
-        PUT: c(profilePut),
-        DELETE: c(profileDelete),
+        PUT: c(withAuth(profilePut)),
+        DELETE: c(withAuth(profileDelete)),
       },
       "/api/instagram/profile/:id/regions": {
-        GET: c(profileAccountRegions),
+        GET: c(withAuth(profileAccountRegions)),
       },
       "/api/instagram/content": {
-        GET: c(contentGet),
-        POST: c(contentPost),
+        GET: c(withAuth(contentGet)),
+        POST: c(withAuth(contentPost)),
       },
-      "/api/instagram/content/scrape": { POST: c(contentScrape) },
-      "/api/instagram/content/submit": { POST: c(contentSubmit) },
-      "/api/instagram/content/actions": { POST: c(contentActions) },
-      "/api/instagram/content/file/:filename": { GET: c(contentFileGet) },
-      "/api/instagram/group": { GET: c(groupGet) },
-      "/api/instagram/group/missing": { GET: c(groupMissingGet) },
-      "/api/instagram/group/:group_id/content": { GET: c(groupContentGet) },
-      "/api/instagram/hashtag": { GET: c(hashtagGet) },
+      "/api/instagram/content/scrape": { POST: c(withAuth(contentScrape)) },
+      "/api/instagram/content/submit": { POST: c(withAuth(contentSubmit)) },
+      "/api/instagram/content/actions": { POST: c(withAuth(contentActions)) },
+      "/api/instagram/content/file/:filename": { GET: withAuth(contentFileGet) },
+      "/api/instagram/group": { GET: c(withAuth(groupGet)) },
+      "/api/instagram/group/missing": { GET: c(withAuth(groupMissingGet)) },
+      "/api/instagram/group/:group_id/content": { GET: c(withAuth(groupContentGet)) },
+      "/api/instagram/hashtag": { GET: c(withAuth(hashtagGet)) },
       "/api/master/region": {
-        GET: c(regionGet),
-        POST: c(regionPost),
+        GET: c(withAuth(regionGet)),
+        POST: c(withAuth(regionPost)),
       },
       "/api/master/region/:id": {
-        PUT: c(regionPut),
-        DELETE: c(regionDelete),
+        PUT: c(withAuth(regionPut)),
+        DELETE: c(withAuth(regionDelete)),
       },
       "/api/master/region/:id/accounts": {
-        GET: c(regionAccountsGet),
-        POST: c(regionAccountAdd),
+        GET: c(withAuth(regionAccountsGet)),
+        POST: c(withAuth(regionAccountAdd)),
       },
       "/api/master/region/:id/accounts/:account_id": {
-        DELETE: c(regionAccountRemove),
+        DELETE: c(withAuth(regionAccountRemove)),
       },
       "/api/master/province": {
-        GET: c(provinceGet),
-        POST: c(provincePost),
+        GET: c(withAuth(provinceGet)),
+        POST: c(withAuth(provincePost)),
       },
       "/api/master/province/:id": {
-        PUT: c(provincePut),
-        DELETE: c(provinceDelete),
+        PUT: c(withAuth(provincePut)),
+        DELETE: c(withAuth(provinceDelete)),
       },
       "/api/master/group": {
-        GET: c(masterGroupGet),
-        POST: c(masterGroupPost),
+        GET: c(withAuth(masterGroupGet)),
+        POST: c(withAuth(masterGroupPost)),
       },
       "/api/master/group/:id": {
-        PUT: c(masterGroupPut),
-        DELETE: c(masterGroupDelete),
+        PUT: c(withAuth(masterGroupPut)),
+        DELETE: c(withAuth(masterGroupDelete)),
       },
       "/ws": (req, server) => {
         if (server.upgrade(req)) return;

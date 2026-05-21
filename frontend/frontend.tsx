@@ -10,8 +10,11 @@ import AccountManagement from "./pages/account-management";
 import RegionManagement from "./pages/region-management";
 import LogsPage from "./pages/logs";
 import ContentPage from "./pages/content";
+import LoginPage from "./pages/login";
 import { Toaster } from "@/components/ui/toast";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
+import { AuthProvider } from "@/providers/auth-provider";
+import { RequireAuth } from "@/providers/require-auth";
 
 function App() {
   return (
@@ -19,16 +22,31 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ConfirmProvider>
           <BrowserRouter>
-            <Layout>
+            <AuthProvider>
               <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/accounts" element={<AccountManagement />} />
-                <Route path="/regions" element={<RegionManagement />} />
-                <Route path="/logs" element={<LogsPage />} />
-                <Route path="/content" element={<ContentPage />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                {/* Public */}
+                <Route path="/login" element={<LoginPage />} />
+
+                {/* Protected */}
+                <Route
+                  path="/*"
+                  element={
+                    <RequireAuth>
+                      <Layout>
+                        <Routes>
+                          <Route path="/" element={<Dashboard />} />
+                          <Route path="/accounts" element={<AccountManagement />} />
+                          <Route path="/regions" element={<RegionManagement />} />
+                          <Route path="/logs" element={<LogsPage />} />
+                          <Route path="/content" element={<ContentPage />} />
+                          <Route path="*" element={<Navigate to="/" replace />} />
+                        </Routes>
+                      </Layout>
+                    </RequireAuth>
+                  }
+                />
               </Routes>
-            </Layout>
+            </AuthProvider>
           </BrowserRouter>
           <Toaster />
         </ConfirmProvider>
