@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Loader2, Users, RefreshCcw } from "lucide-react";
+import { Plus, Loader2, Users, RefreshCcw, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AccountManagementSkeleton } from "@/components/ui/skeletons";
 import {
@@ -15,6 +15,7 @@ import {
 } from "@/hooks/use-accounts";
 import { useRegionData } from "@/hooks/use-regions";
 import { useConfirm } from "@/hooks/use-confirm";
+import { useScrapeStore } from "@/stores/scrape.store";
 import { useDisclosure } from "@/hooks/use-disclosure";
 import {
   AccountsTable,
@@ -25,7 +26,7 @@ import {
   AddAccountDialog,
   EditAccountDialog,
 } from "@/components/features/accounts/account-form-dialog";
-import type { Account } from "@/types";
+import type { Account, SyncProgress } from "@/types";
 import type { AccountFormData, EditAccountFormData } from "@/schemas/account.schema";
 
 type FilterType = "all" | "external" | "internal";
@@ -34,6 +35,7 @@ export default function AccountManagement() {
   const [filter, setFilter] = useState<FilterType>("all");
   const { data: accounts = [], isLoading } = useAccounts(filter);
   const { data: regionData } = useRegionData();
+  const syncProgress = useScrapeStore((s) => s.syncProgress);
 
   const addAccount = useAddAccount();
   const editAccount = useEditAccount();
@@ -133,19 +135,29 @@ export default function AccountManagement() {
             Manage Instagram accounts for scraping
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleSyncAll} disabled={syncAll.isPending}>
-            {syncAll.isPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <RefreshCcw className="size-4" />
-            )}
-            Sync All IDs
-          </Button>
-          <Button onClick={() => addDialog.open()} size="sm">
-            <Plus className="size-4" />
-            Add Account
-          </Button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleSyncAll} disabled={syncAll.isPending}>
+              {syncProgress.running ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  {syncProgress.total > 0
+                    ? `${syncProgress.processed}/${syncProgress.total}`
+                    : "Starting…"}
+                </>
+              ) : (
+                <>
+                  <RefreshCcw className="size-4" />
+                  Sync All IDs
+                </>
+              )}
+            </Button>
+            <Button onClick={() => addDialog.open()} size="sm">
+              <Plus className="size-4" />
+              Add Account
+            </Button>
+          </div>
+          <SyncStatusBadge syncProgress={syncProgress} />
         </div>
       </div>
 
@@ -213,5 +225,28 @@ export default function AccountManagement() {
         description={`Select regions to assign @${regionsDialog.data?.username ?? ""} to`}
       />
     </div>
+  );
+}
+
+function SyncStatusBadge({ syncProgress }: { syncProgress: SyncProgress }) {
+  if (syncProgress.total === 0) return null;
+
+  if (syncProgress.running) {
+    return (
+      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+        <Loader2 className="size-3 animate-spin" />
+        {syncProgress.current
+          ? `Syncing @${syncProgress.current}`
+          : "Preparing…"}
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+      <CheckCircle2 className="size-3 text-green-500" />
+      Last sync: {syncProgress.processed}/{syncProgress.total} resolved
+      {syncProgress.failed > 0 && `, ${syncProgress.failed} deleted`}
+    </p>
   );
 }

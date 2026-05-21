@@ -71,15 +71,6 @@ export function AccountsTable({
         },
       },
       {
-        accessorKey: "followers",
-        header: "Followers",
-        cell: ({ row }) => (
-          <span className="tabular-nums text-muted-foreground">
-            {(row.getValue<number>("followers") ?? 0).toLocaleString()}
-          </span>
-        ),
-      },
-      {
         accessorKey: "is_external",
         header: "Type",
         enableSorting: false,

@@ -9,6 +9,7 @@ import {
   profileDelete,
   profileAccountRegions,
 } from "@/routes/instagram/profile";
+import { getSyncState } from "@/services/instagram-id.service";
 import {
   contentGet,
   contentPost,
@@ -154,6 +155,7 @@ export function startServer(): void {
       open(ws) {
         wsManager.add(ws);
         ws.send(JSON.stringify({ type: "state", ...scrapeLogService.currentState() }));
+        ws.send(JSON.stringify({ type: "sync_progress", ...getSyncState() }));
       },
       message() {},
       close(ws) {

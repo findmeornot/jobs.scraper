@@ -7,6 +7,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import type { SyncProgress } from "@/types";
 
 export interface LiveLogEntry {
   id: number;
@@ -30,12 +31,21 @@ export function dispatchContentProcessed(detail: ContentProcessedDetail) {
   window.dispatchEvent(new CustomEvent<ContentProcessedDetail>("content:processed", { detail }));
 }
 
+const INITIAL_SYNC_PROGRESS: SyncProgress = {
+  running: false,
+  total: 0,
+  processed: 0,
+  failed: 0,
+  current: null,
+};
+
 interface ScrapeStatusState {
   isScraping: boolean;
   isPaused: boolean;
   sessionId: string | null;
   connected: boolean;
   liveLogs: LiveLogEntry[];
+  syncProgress: SyncProgress;
 }
 
 interface ScrapeStatusContextValue extends ScrapeStatusState {
@@ -48,6 +58,7 @@ const ScrapeStatusContext = createContext<ScrapeStatusContextValue>({
   sessionId: null,
   connected: false,
   liveLogs: [],
+  syncProgress: INITIAL_SYNC_PROGRESS,
   clearLiveLogs: () => {},
 });
 
@@ -60,6 +71,7 @@ export function ScrapeStatusProvider({ children }: { children: ReactNode }) {
     sessionId: null,
     connected: false,
     liveLogs: [],
+    syncProgress: INITIAL_SYNC_PROGRESS,
   });
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -99,6 +111,17 @@ export function ScrapeStatusProvider({ children }: { children: ReactNode }) {
             skipReason: msg.skipReason,
             error: msg.error,
           });
+        } else if (msg.type === "sync_progress") {
+          setState((s) => ({
+            ...s,
+            syncProgress: {
+              running: msg.running,
+              total: msg.total,
+              processed: msg.processed,
+              failed: msg.failed,
+              current: msg.current ?? null,
+            },
+          }));
         }
       } catch {}
     };

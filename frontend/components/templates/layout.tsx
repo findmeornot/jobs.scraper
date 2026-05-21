@@ -45,7 +45,7 @@ export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isScraping = useScrapeStore((s) => s.isScraping);
-  const { setScrapeState, appendLog, dispatchContentProcessed } = useScrapeStore();
+  const { setScrapeState, appendLog, dispatchContentProcessed, setSyncProgress } = useScrapeStore();
 
   const queryClient = useQueryClient();
   const logout = useLogout();
@@ -88,6 +88,14 @@ export default function Layout({ children }: LayoutProps) {
             skipReason: msg.skipReason,
             error: msg.error,
           });
+        } else if (msg.type === "sync_progress") {
+          setSyncProgress({
+            running: msg.running,
+            total: msg.total,
+            processed: msg.processed,
+            failed: msg.failed,
+            current: msg.current ?? null,
+          });
         }
       } catch {}
     };
@@ -98,7 +106,7 @@ export default function Layout({ children }: LayoutProps) {
     };
 
     ws.onerror = () => ws.close();
-  }, [setScrapeState, appendLog, dispatchContentProcessed]);
+  }, [setScrapeState, appendLog, dispatchContentProcessed, setSyncProgress]);
 
   useEffect(() => {
     connect();

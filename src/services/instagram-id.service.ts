@@ -5,7 +5,26 @@ import {
   upsertAccount,
   deleteAccount,
 } from "@/repositories/instagram-account.repo";
+import { wsManager } from "@/ws/manager";
 import { logger } from "@/utils/logger";
+
+interface SyncState {
+  running: boolean;
+  total: number;
+  processed: number;
+  failed: number;
+  current: string | null;
+}
+
+let syncState: SyncState = { running: false, total: 0, processed: 0, failed: 0, current: null };
+
+export function getSyncState(): SyncState {
+  return { ...syncState };
+}
+
+function broadcastSyncProgress() {
+  wsManager.broadcast({ type: "sync_progress", ...syncState });
+}
 
 const WEB_UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
@@ -171,40 +190,55 @@ export async function resolveInstagramId(username: string): Promise<ResolvedId> 
 
 /**
  * Syncs Instagram IDs for ALL accounts.
- * If an account's ID cannot be resolved by any strategy, the account is deleted.
+ * Accounts that cannot be resolved by any strategy are deleted.
  */
 export async function syncMissingIds(): Promise<{
   processed: number;
   deleted: number;
   failed: string[];
 }> {
-  const accounts = await findAllAccounts();
-  const failed: string[] = [];
-  let processed = 0;
-  let deleted = 0;
-
-  logger.info({ count: accounts.length }, "Syncing accounts");
-
-  for (const account of accounts) {
-    try {
-      const { id, followers, following } = await resolveInstagramId(account.username);
-      await upsertAccount({ instagram_id: id, username: account.username, followers, following });
-      processed++;
-      await new Promise((r) => setTimeout(r, 3_000));
-    } catch (err) {
-      const msg = `@${account.username}: ${err instanceof Error ? err.message : "Unknown error"}`;
-      logger.error({ username: account.username }, `All strategies failed — deleting — ${msg}`);
-      failed.push(msg);
-      try {
-        await deleteAccount(account.id);
-        deleted++;
-      } catch (delErr) {
-        logger.error({ username: account.username, error: delErr }, "Could not delete account");
-      }
-      await new Promise((r) => setTimeout(r, 5_000));
-    }
+  if (syncState.running) {
+    logger.warn("Sync already in progress — skipping");
+    return { processed: 0, deleted: 0, failed: [] };
   }
 
-  logger.info({ processed, deleted, failed: failed.length }, "Sync complete");
-  return { processed, deleted, failed };
+  const accounts = await findAllAccounts();
+  const failed: string[] = [];
+
+  syncState = { running: true, total: accounts.length, processed: 0, failed: 0, current: null };
+  broadcastSyncProgress();
+  logger.info({ count: accounts.length }, "Syncing all accounts");
+
+  try {
+    for (const account of accounts) {
+      syncState.current = account.username;
+      broadcastSyncProgress();
+
+      try {
+        const { id } = await resolveInstagramId(account.username);
+        await upsertAccount({ instagram_id: id, username: account.username, followers: 0, following: 0 });
+        syncState.processed++;
+        broadcastSyncProgress();
+        await new Promise((r) => setTimeout(r, 2_000));
+      } catch (err) {
+        const msg = `@${account.username}: ${err instanceof Error ? err.message : "Unknown error"}`;
+        logger.error({ username: account.username }, `All strategies failed — deleting — ${msg}`);
+        failed.push(msg);
+        syncState.failed++;
+        broadcastSyncProgress();
+        try {
+          await deleteAccount(account.id);
+        } catch (delErr) {
+          logger.error({ username: account.username, error: delErr }, "Could not delete account");
+        }
+        await new Promise((r) => setTimeout(r, 3_000));
+      }
+    }
+  } finally {
+    syncState = { ...syncState, running: false, current: null };
+    broadcastSyncProgress();
+  }
+
+  logger.info({ processed: syncState.processed, deleted: syncState.failed }, "Sync complete");
+  return { processed: syncState.processed, deleted: syncState.failed, failed };
 }

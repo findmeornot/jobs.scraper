@@ -116,3 +116,11 @@ export interface ContentProcessedDetail {
 }
 
 export type AccountFilterType = "all" | "external" | "internal";
+
+export interface SyncProgress {
+  running: boolean;
+  total: number;
+  processed: number;
+  failed: number;
+  current: string | null;
+}

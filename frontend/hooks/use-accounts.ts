@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
+import { useScrapeStore } from "@/stores/scrape.store";
 import type { Account, AccountRegion, AccountFilterType } from "@/types";
 import type { AccountFormData, EditAccountFormData } from "@/schemas/account.schema";
 
@@ -104,14 +106,31 @@ export function useSyncAccountId() {
 
 export function useSyncAllIds() {
   const qc = useQueryClient();
-  return useMutation({
+  const syncProgress = useScrapeStore((s) => s.syncProgress);
+  const prevRunning = useRef(false);
+
+  useEffect(() => {
+    const wasRunning = prevRunning.current;
+    prevRunning.current = syncProgress.running;
+
+    if (wasRunning && !syncProgress.running && syncProgress.total > 0) {
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success(
+        "Sync complete",
+        `${syncProgress.processed}/${syncProgress.total} synced, ${syncProgress.failed} deleted`,
+      );
+    }
+  }, [syncProgress, qc]);
+
+  const mutation = useMutation({
     mutationFn: () => apiFetch("/api/instagram/profile/sync-ids", { method: "POST" }),
-    onSuccess: () => {
-      toast.success("Sync started", "All accounts are being re-synced.");
-      setTimeout(() => qc.invalidateQueries({ queryKey: ["accounts"] }), 8_000);
-    },
     onError: () => toast.error("Sync failed", "Could not start ID sync."),
   });
+
+  return {
+    mutate: mutation.mutate,
+    isPending: mutation.isPending || syncProgress.running,
+  };
 }
 
 export function useAddRegionToAccount() {

@@ -1,7 +1,15 @@
 import { create } from "zustand";
-import type { LiveLogEntry, ContentProcessedDetail } from "@/types";
+import type { LiveLogEntry, ContentProcessedDetail, SyncProgress } from "@/types";
 
 const MAX_LIVE_LOGS = 500;
+
+const INITIAL_SYNC_PROGRESS: SyncProgress = {
+  running: false,
+  total: 0,
+  processed: 0,
+  failed: 0,
+  current: null,
+};
 
 interface ScrapeState {
   isScraping: boolean;
@@ -9,6 +17,7 @@ interface ScrapeState {
   sessionId: string | null;
   connected: boolean;
   liveLogs: LiveLogEntry[];
+  syncProgress: SyncProgress;
 }
 
 interface ScrapeActions {
@@ -16,6 +25,7 @@ interface ScrapeActions {
   appendLog: (entry: LiveLogEntry) => void;
   clearLogs: () => void;
   dispatchContentProcessed: (detail: ContentProcessedDetail) => void;
+  setSyncProgress: (progress: SyncProgress) => void;
 }
 
 export const useScrapeStore = create<ScrapeState & ScrapeActions>((set) => ({
@@ -24,6 +34,7 @@ export const useScrapeStore = create<ScrapeState & ScrapeActions>((set) => ({
   sessionId: null,
   connected: false,
   liveLogs: [],
+  syncProgress: INITIAL_SYNC_PROGRESS,
 
   setScrapeState: (partial) => set((s) => ({ ...s, ...partial })),
 
@@ -37,4 +48,6 @@ export const useScrapeStore = create<ScrapeState & ScrapeActions>((set) => ({
   dispatchContentProcessed: (detail) => {
     window.dispatchEvent(new CustomEvent<ContentProcessedDetail>("content:processed", { detail }));
   },
+
+  setSyncProgress: (progress) => set({ syncProgress: progress }),
 }));

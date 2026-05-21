@@ -9,8 +9,6 @@ import {
   removeAccount,
 } from "@/services/instagram-account.service";
 import { resolveInstagramId, syncMissingIds } from "@/services/instagram-id.service";
-import { fetchUserInfo } from "@/scraper/fetch";
-import { instagramConfig } from "@/config/instagram";
 import { findRegionAccountsByAccountId } from "@/repositories/region-account.repo";
 
 const profilePostSchema = z.object({
@@ -101,43 +99,9 @@ export async function profileAccountRegions(req: Request): Promise<Response> {
 
 async function processUsername(username: string) {
   try {
-    const profile = await resolveInstagramId(username);
-    const { id: profileId, followers, following } = profile;
-
-    if (
-      instagramConfig.sessionId &&
-      instagramConfig.sessionId.length > 0 &&
-      profileId &&
-      followers === 0
-    ) {
-      try {
-        const info = await fetchUserInfo(profileId, instagramConfig.sessionId);
-        await saveOrUpdateAccount({
-          instagram_id: profileId,
-          username,
-          followers: info.follower_count,
-          following: info.following_count,
-        });
-        return {
-          success: true,
-          userId: profileId,
-          username,
-          followers: String(info.follower_count),
-          following: String(info.following_count),
-        };
-      } catch {
-        // session info fetch failed — fall through to basic save
-      }
-    }
-
-    await saveOrUpdateAccount({ instagram_id: profileId, username, followers, following });
-    return {
-      success: true,
-      userId: profileId,
-      username,
-      followers: String(followers),
-      following: String(following),
-    };
+    const { id } = await resolveInstagramId(username);
+    await saveOrUpdateAccount({ instagram_id: id, username, followers: 0, following: 0 });
+    return { success: true, userId: id, username };
   } catch (error) {
     return {
       success: false,
