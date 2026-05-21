@@ -10,13 +10,14 @@ Example response:
 Rules:
 1. No markdown, no explanations, no formatting
 2. Only valid JSON starting with { and ending with }
-3. For company name: look for PT, CV, Group, Corp, Company, Ltd identifiers
-4. For job titles: keep original language, use " / " separator for bilingual
-5. For education: must be one of: SMP, SMA/SMK, D1/D2/D3, D4, S1, S2, S3, Umum
-6. For area: extract any mentioned location or work area
-7. For age requirements: extract min and max age if mentioned
-8. For skills: separate soft skills (interpersonal) and hard skills (technical)
-9. For apply URL: extract any application link
+3. Assume isJobPost = true unless the image/caption is CLEARLY unrelated to job recruitment (e.g. food, travel, fashion, memes). Indonesian job posts often use terms like "loker", "lowongan", "dibutuhkan", "rekrutmen", "hiring", "posisi", "pelamar", "kualifikasi"
+4. For company name: look for PT, CV, Group, Corp, Tbk, UD, or any business name. Use the brand/company visible in the image if not in caption
+5. For job titles: keep original language, use " / " separator for bilingual
+6. For education: must be one of: SMP, SMA/SMK, D1/D2/D3, D4, S1, S2, S3, Umum
+7. For area: extract any mentioned location, city, or work area
+8. For age requirements: extract min and max age if mentioned
+9. For skills: separate soft skills (interpersonal) and hard skills (technical/certification)
+10. For apply URL: extract any application link, wa.me link, or email
 
 Now analyze the image and caption to output the JSON.`;
 
@@ -47,14 +48,22 @@ export async function analyzeJobPoster(
     const categoryList = categories.map((c) => `${c.id}: ${c.name}`).join("\n");
 
     const prompt = `${DEFAULT_PROMPT}\n\nAvailable categories (respond with category_ids as array of numbers):\n${categoryList}${
-      caption ? `\n\nCaption: ${caption}` : ""
+      caption ? `\n\nAdditional context from image caption: ${caption}` : ""
     }`;
 
     const raw = await callGeminiApi(imageUrl, prompt);
-    const cleaned = cleanJsonResponse(raw);
-    return await parseAndValidate(cleaned);
+
+    let cleaned = cleanJsonResponse(raw);
+
+    if (!cleaned.startsWith("{")) {
+      cleaned = createFallbackResponse(raw);
+    }
+
+    const result = await parseAndValidate(cleaned);
+
+    return result;
   } catch (error) {
-    console.error("Gemini analysis error:", error);
+    console.error("[Gemini] error:", error instanceof Error ? error.message : error);
     return DEFAULT_RESPONSE;
   }
 }
@@ -71,10 +80,12 @@ async function callGeminiApi(imageUrl: string, prompt: string): Promise<string> 
   });
 
   if (!response.ok) {
-    throw new Error(`Gemini API error ${response.status}: ${await response.text()}`);
+    const body = await response.text().catch(() => "");
+    throw new Error(`Gemini API ${response.status}: ${body}`);
   }
 
   const data = await response.json();
+  if (!data.response) throw new Error(`Gemini returned empty response: ${JSON.stringify(data)}`);
   return data.response as string;
 }
 
@@ -85,7 +96,33 @@ function cleanJsonResponse(text: string): string {
   if (start !== -1 && end !== -1 && end > start) {
     cleaned = cleaned.substring(start, end + 1);
   }
+  // Strip any trailing non-JSON garbage after the closing brace
+  cleaned = cleaned.replace(/[^}]+$/, "");
   return cleaned;
+}
+
+function createFallbackResponse(text: string): string {
+  // Phone: must contain actual digits (min 6)
+  const phoneRaw = text.match(/(?:Phone|WhatsApp|WA|Telp|HP)\s*:?\s*([\d\s\-+()\[\]]{6,})/i)?.[1]?.trim() ?? null;
+  const phone = phoneRaw && /\d{5,}/.test(phoneRaw) ? phoneRaw : null;
+
+  const education = text.match(
+    /(?:Pendidikan|Education|Lulusan)\s*:?\s*((?:S\d|D\d|SMA|SMK|SMP|Bachelor|Master|PhD)[^,\n]{0,30})/i,
+  )?.[1]?.trim() ?? null;
+
+  // Area: require at least a city/word after the keyword, not just "Kerja:"
+  const areaRaw = text.match(
+    /(?:Lokasi|Wilayah|Domisili|Penempatan\s+Kerja|Location)\s*:?\s*([A-Za-z][^,\n]{2,40})/i,
+  )?.[1]?.trim() ?? null;
+  const area = areaRaw && !areaRaw.toLowerCase().startsWith("kerja") ? areaRaw : null;
+
+  return JSON.stringify({
+    ...DEFAULT_RESPONSE,
+    isJobPost: !!(phone || education || area),
+    phone,
+    education,
+    area,
+  });
 }
 
 async function parseAndValidate(text: string): Promise<GeminiJobData> {

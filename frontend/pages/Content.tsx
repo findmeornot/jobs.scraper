@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Check, X, CheckCircle2, Loader2, ImageOff, ExternalLink,
-  ChevronDown, ChevronUp, FileImage, User, RefreshCw,
+  ChevronDown, ChevronUp, FileImage, User, RefreshCw, AlertCircle,
 } from "lucide-react";
 import dayjs from "dayjs";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,10 @@ import {
 } from "@/components/ui/dialog";
 import { useContent, type ContentItem, type ContentGroup } from "@/hooks/use-content";
 import { useConfirm } from "@/hooks/use-confirm";
+import { useScrapeStatus, type ContentProcessedDetail } from "@/hooks/use-scrape-status";
 import { ContentSkeleton } from "@/components/ui/skeletons";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/toast";
 
 // ─── Reviewer name (persisted) ───────────────────────────────────────────────
 
@@ -71,6 +73,9 @@ function ContentCard({ item, reviewer, onConfirm, onReject, onLightbox, pending 
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const isConfirmed = !!item.confirmed_at;
   const hasCdcUrl = !!item.remote_url;
+  const isProcessing = isConfirmed && !item.processingDone && !hasCdcUrl;
+  const isSkipped = isConfirmed && item.processingDone && !hasCdcUrl && !item.processingError;
+  const isFailed = isConfirmed && item.processingDone && !hasCdcUrl && !!item.processingError;
 
   return (
     <div
@@ -88,10 +93,18 @@ function ContentCard({ item, reviewer, onConfirm, onReject, onLightbox, pending 
           onClick={() => onLightbox(item.display_url)}
         />
         {isConfirmed && (
-          <div className="absolute inset-0 bg-green-500/15 flex items-end justify-start p-2">
-            <Badge className="bg-green-600/90 text-white text-[10px] gap-1 backdrop-blur-sm">
-              <CheckCircle2 className="size-2.5" />
-              {hasCdcUrl ? "Published" : "Confirmed"}
+          <div className={cn(
+            "absolute inset-0 flex items-end justify-start p-2",
+            hasCdcUrl ? "bg-green-500/15" : isFailed ? "bg-destructive/10" : isProcessing ? "bg-yellow-500/10" : "bg-muted/20",
+          )}>
+            <Badge className={cn(
+              "text-white text-[10px] gap-1 backdrop-blur-sm",
+              hasCdcUrl ? "bg-green-600/90" : isFailed ? "bg-destructive/90" : isProcessing ? "bg-yellow-600/90" : "bg-foreground/60",
+            )}>
+              {hasCdcUrl ? <><CheckCircle2 className="size-2.5" />Published</>
+                : isFailed ? <><AlertCircle className="size-2.5" />Failed</>
+                : isProcessing ? <><Loader2 className="size-2.5 animate-spin" />Processing</>
+                : <><CheckCircle2 className="size-2.5" />Confirmed</>}
             </Badge>
           </div>
         )}
@@ -140,12 +153,7 @@ function ContentCard({ item, reviewer, onConfirm, onReject, onLightbox, pending 
 
         {/* Actions */}
         <div className="pt-1">
-          {isConfirmed ? (
-            <div className="flex items-center gap-1 text-[10px] text-green-600">
-              <CheckCircle2 className="size-3 shrink-0" />
-              <span className="truncate">by {item.action_by}</span>
-            </div>
-          ) : (
+          {!isConfirmed ? (
             <div className="flex gap-1.5">
               <Button
                 size="sm"
@@ -153,7 +161,8 @@ function ContentCard({ item, reviewer, onConfirm, onReject, onLightbox, pending 
                 onClick={() => onConfirm(item.id)}
                 disabled={!reviewer || pending}
               >
-                <Check className="size-3" />Confirm
+                {pending ? <Loader2 className="size-3 animate-spin" /> : <Check className="size-3" />}
+                Confirm
               </Button>
               <Button
                 size="sm"
@@ -164,6 +173,47 @@ function ContentCard({ item, reviewer, onConfirm, onReject, onLightbox, pending 
               >
                 <X className="size-3" />
               </Button>
+            </div>
+          ) : hasCdcUrl ? (
+            <div className="flex items-center gap-1 text-[10px] text-green-600">
+              <CheckCircle2 className="size-3 shrink-0" />
+              <span className="truncate">Published · {item.action_by}</span>
+            </div>
+          ) : isFailed ? (
+            <div className="space-y-1.5">
+              <p className="text-[10px] text-destructive flex items-start gap-1" title={item.processingError}>
+                <AlertCircle className="size-3 shrink-0 mt-px" />
+                <span className="truncate">{item.processingError}</span>
+              </p>
+              <div className="flex gap-1.5">
+                <Button
+                  size="sm"
+                  className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700 text-white gap-1"
+                  onClick={() => onConfirm(item.id)}
+                  disabled={!reviewer || pending}
+                >
+                  <Check className="size-3" />Retry
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-2.5 text-xs hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                  onClick={() => onReject(item.id)}
+                  disabled={pending}
+                >
+                  <X className="size-3" />
+                </Button>
+              </div>
+            </div>
+          ) : isSkipped ? (
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <CheckCircle2 className="size-3 shrink-0" />
+              <span className="truncate">Confirmed · {item.skipReason ?? "skipped"}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              <Loader2 className="size-3 animate-spin shrink-0" />
+              <span>Processing…</span>
             </div>
           )}
         </div>
@@ -229,9 +279,10 @@ function GroupSection({
 export default function Content() {
   const {
     groups, loading, date, setDate, pendingOnly, setPendingOnly,
-    refetch, confirmItem, rejectItem, totalItems, confirmedItems, pendingItems,
+    refetch, confirmItem, rejectItem, applyContentUpdate, totalItems, confirmedItems, pendingItems,
   } = useContent();
 
+  const { connected } = useScrapeStatus();
   const { reviewer, setReviewer } = useReviewer();
   const confirm = useConfirm();
   const [reviewerDraft, setReviewerDraft] = useState(reviewer);
@@ -240,10 +291,28 @@ export default function Content() {
   const [activeGroup, setActiveGroup] = useState<number | "all">("all");
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
-  // Reset active group when groups change
+  // Reset active group when filters change
+  useEffect(() => { setActiveGroup("all"); }, [date, pendingOnly]);
+
+  // Refetch on WS reconnect to pick up any remote_url updates missed while disconnected
+  const hasConnectedRef = useRef(false);
   useEffect(() => {
-    setActiveGroup("all");
-  }, [date, pendingOnly]);
+    if (connected) {
+      if (hasConnectedRef.current) refetch();
+      hasConnectedRef.current = true;
+    }
+  }, [connected, refetch]);
+
+  // Apply background processing result instantly via browser event (no closure issues)
+  useEffect(() => {
+    function handler(e: Event) {
+      const { contentId, remoteUrl, error, skipReason } = (e as CustomEvent<ContentProcessedDetail>).detail;
+      applyContentUpdate(contentId, remoteUrl, error, skipReason);
+      if (error) toast.error("Processing failed", error);
+    }
+    window.addEventListener("content:processed", handler);
+    return () => window.removeEventListener("content:processed", handler);
+  }, [applyContentUpdate]);
 
   function addPending(id: number) {
     setPendingIds((p) => new Set(p).add(id));

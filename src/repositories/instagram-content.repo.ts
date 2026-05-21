@@ -70,19 +70,16 @@ export async function saveContent(data: {
   return rows[0] ?? null;
 }
 
-export async function confirmContent(
-  id: number,
-  user: string,
-  remoteUrl?: string,
-): Promise<void> {
+export async function confirmContent(id: number, user: string): Promise<void> {
   await db`
     UPDATE instagram_content
-    SET confirmed_at = NOW(),
-        rejected_at = NULL,
-        action_by = ${user},
-        remote_url = ${remoteUrl ?? null}
+    SET confirmed_at = NOW(), rejected_at = NULL, action_by = ${user}, remote_url = NULL
     WHERE id = ${id}
   `;
+}
+
+export async function updateContentRemoteUrl(id: number, remoteUrl: string): Promise<void> {
+  await db`UPDATE instagram_content SET remote_url = ${remoteUrl} WHERE id = ${id}`;
 }
 
 export async function rejectContent(id: number): Promise<void> {

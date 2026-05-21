@@ -1,16 +1,20 @@
 import { ok, err, serverErr } from "@/utils/response";
+import { getContentForReview, saveInstagramContent } from "@/services/instagram-content.service";
 import {
-  getContentForReview,
-  saveInstagramContent,
-  processContentAction,
-} from "@/services/instagram-content.service";
-import { saveManualContent } from "@/repositories/instagram-content.repo";
+  saveManualContent,
+  confirmContent,
+  rejectContent,
+  findContentWithRelations,
+  updateContentRemoteUrl,
+} from "@/repositories/instagram-content.repo";
 import { getRandomRegionByGroupId } from "@/repositories/master-region.repo";
 import { createManualAccount } from "@/repositories/instagram-account.repo";
 import { buildCdcPayload, forwardToCdc } from "@/services/cdc.service";
+import { geminiConfig } from "@/config/gemini";
 import { scrapePosts } from "@/scraper/index";
 import { scrapeAllExternalAccounts } from "@/crons/instagram-content.cron";
 import { scrapeLogService } from "@/services/scrape-log.service";
+import { wsManager } from "@/ws/manager";
 import { saveUploadedFile, ensureDir } from "@/utils/image";
 import { appConfig } from "@/config/app";
 import { join } from "path";
@@ -126,43 +130,62 @@ export async function contentActions(req: Request): Promise<Response> {
       return err("action must be 'confirm' or 'reject'");
     }
 
-    const result = await processContentAction(
-      Number(content_id),
-      action as "confirm" | "reject",
-      user as string,
-      async (content) => {
-        if (!content || action !== "confirm") return undefined;
-        try {
-          const { payload } = await buildCdcPayload(
-            content.display_url,
-            {
-              id: content.region_id,
-              province_id: content.province_id,
-              js_loker: content.js_loker,
-            },
-            content.caption,
-          );
-          if (!payload.nama) return undefined;
-          return forwardToCdc(payload);
-        } catch (err) {
-          console.error("CDC forward error:", err);
-          return undefined;
-        }
-      },
-    );
+    const id = Number(content_id);
 
-    if (!result) {
-      return err(`Content not found: ${content_id}`, 404);
+    if (action === "reject") {
+      await rejectContent(id);
+      return Response.json({ success: true, message: "Content rejected" });
     }
 
-    return Response.json({
-      success: true,
-      message: `Content ${action}ed`,
-      result,
-    });
+    // Confirm immediately — fire Gemini+CDC in background
+    await confirmContent(id, user as string);
+
+    void processInBackground(id).catch(console.error);
+
+    return Response.json({ success: true, message: "Content confirmed, processing in background" });
   } catch (error) {
     console.error("contentActions error:", error);
     return serverErr("Action failed");
+  }
+}
+
+async function processInBackground(contentId: number): Promise<void> {
+  const tag = `[bg:${contentId}]`;
+  try {
+    console.log(`${tag} fetching content`);
+    const content = await findContentWithRelations(contentId);
+    if (!content) {
+      console.warn(`${tag} content not found, skipping`);
+      wsManager.broadcast({ type: "content_processed", contentId, remoteUrl: null, skipped: true });
+      return;
+    }
+
+    console.log(`${tag} calling Gemini (${geminiConfig.baseUrl})`);
+    const { payload, jobData } = await buildCdcPayload(
+      content.display_url,
+      { id: content.region_id, province_id: content.province_id, js_loker: content.js_loker },
+      content.caption,
+    );
+
+    console.log(`${tag} jobData →`, JSON.stringify(jobData));
+    console.log(`${tag} payload.nama →`, payload.nama);
+    console.log(`${tag} payload →`, JSON.stringify(payload));
+
+    if (!payload.nama) {
+      console.log(`${tag} no company name extracted — skipping CDC`);
+      wsManager.broadcast({ type: "content_processed", contentId, remoteUrl: null, skipped: true, skipReason: "no company name extracted" });
+      return;
+    }
+
+    console.log(`${tag} forwarding to CDC (${payload.nama})`);
+    const remoteUrl = await forwardToCdc(payload);
+    await updateContentRemoteUrl(contentId, remoteUrl);
+    console.log(`${tag} done → ${remoteUrl}`);
+    wsManager.broadcast({ type: "content_processed", contentId, remoteUrl });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error(`${tag} failed:`, message);
+    wsManager.broadcast({ type: "content_processed", contentId, remoteUrl: null, error: message });
   }
 }
 

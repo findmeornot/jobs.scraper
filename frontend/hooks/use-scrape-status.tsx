@@ -10,6 +10,18 @@ export interface LiveLogEntry {
   created_at: string;
 }
 
+export interface ContentProcessedDetail {
+  contentId: number;
+  remoteUrl: string | null;
+  skipReason?: string;
+  error?: string;
+}
+
+/** Dispatch this to update content cards immediately, bypassing React state. */
+export function dispatchContentProcessed(detail: ContentProcessedDetail) {
+  window.dispatchEvent(new CustomEvent<ContentProcessedDetail>("content:processed", { detail }));
+}
+
 interface ScrapeStatusState {
   isScraping: boolean;
   isPaused: boolean;
@@ -72,6 +84,13 @@ export function ScrapeStatusProvider({ children }: { children: ReactNode }) {
             ...s,
             liveLogs: [...s.liveLogs.slice(-MAX_LIVE_LOGS + 1), msg.entry],
           }));
+        } else if (msg.type === "content_processed") {
+          dispatchContentProcessed({
+            contentId: msg.contentId,
+            remoteUrl: msg.remoteUrl ?? null,
+            skipReason: msg.skipReason,
+            error: msg.error,
+          });
         }
       } catch {}
     };

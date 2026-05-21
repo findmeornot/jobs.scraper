@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "@/components/ui/toast";
 import dayjs from "dayjs";
 
@@ -11,6 +11,7 @@ export interface ContentItem {
   shortcode: string | null;
   posted_at: string | null;
   confirmed_at: string | null;
+  remote_url: string | null;
   action_by: string | null;
   content_created_at: string;
   group_id: number;
@@ -18,6 +19,10 @@ export interface ContentItem {
   region_id: number;
   region_name: string;
   account_id: number;
+  // client-only fields populated from WebSocket events
+  processingDone?: boolean;
+  processingError?: string;
+  skipReason?: string;
 }
 
 export interface ContentGroup {
@@ -43,7 +48,18 @@ export function useContent() {
 
     fetch(`/api/instagram/content?${params}`)
       .then((r) => r.json())
-      .then((d) => setGroups(d.results ?? []))
+      .then((d) => {
+        const groups: ContentGroup[] = d.results ?? [];
+        // Items already in DB are past the processing window — mark done
+        // so they never show the infinite "Processing…" spinner
+        setGroups(groups.map((g) => ({
+          ...g,
+          content: g.content.map((c) => ({
+            ...c,
+            processingDone: c.confirmed_at !== null,
+          })),
+        })));
+      })
       .catch(() => toast.error("Failed to load content"))
       .finally(() => setLoading(false));
   }, [date, pendingOnly, tick]);
@@ -53,7 +69,9 @@ export function useContent() {
       prev.map((g) => ({
         ...g,
         content: g.content.map((c) =>
-          c.id === id ? { ...c, confirmed_at: new Date().toISOString(), action_by: reviewer } : c,
+          c.id === id
+            ? { ...c, confirmed_at: new Date().toISOString(), action_by: reviewer, processingDone: false, processingError: undefined }
+            : c,
         ),
       })),
     );
@@ -108,6 +126,25 @@ export function useContent() {
   const confirmedItems = allContent.filter((c) => c.confirmed_at !== null).length;
   const pendingItems = totalItems - confirmedItems;
 
+  const applyContentUpdate = useCallback((contentId: number, remoteUrl: string | null, error?: string, skipReason?: string) => {
+    setGroups((prev) =>
+      prev.map((g) => ({
+        ...g,
+        content: g.content.map((c) =>
+          c.id === contentId
+            ? {
+                ...c,
+                remote_url: remoteUrl ?? c.remote_url,
+                processingDone: true,
+                processingError: error,
+                skipReason,
+              }
+            : c,
+        ),
+      })),
+    );
+  }, []);
+
   return {
     groups,
     loading,
@@ -118,6 +155,7 @@ export function useContent() {
     refetch,
     confirmItem,
     rejectItem,
+    applyContentUpdate,
     totalItems,
     confirmedItems,
     pendingItems,

@@ -68,6 +68,7 @@ export async function forwardToCdc(payload: CdcPayload): Promise<string> {
   const response = await fetch(cdcUrl, {
     method: "POST",
     body: formData,
+    signal: AbortSignal.timeout(30_000),
   });
 
   if (!response.ok) {
