@@ -7,6 +7,6 @@ export const db = new SQL({
   database: process.env.DB_NAME ?? "",
   username: process.env.DB_USERNAME ?? "root",
   password: process.env.DB_PASSWORD ?? "",
-  ssl: "disable",
+  tls: false,
   connectionTimeout: 30,
 });
