@@ -1,8 +1,8 @@
 import { appConfig } from "@/config/app";
 import { routes } from "@/routes/router";
 import { websocketHandlers } from "@/ws/handlers";
+import { handlePreflight } from "@/routes/utils/cors";
 import { logger } from "@/utils/logger";
-
 
 export function startServer(): void {
   const server = Bun.serve<undefined>({
@@ -16,7 +16,10 @@ export function startServer(): void {
       },
     },
     websocket: websocketHandlers,
-    fetch: () => new Response(Bun.file("frontend/forbidden.html"), { status: 403 }),
+    fetch: (req) => {
+      if (req.method === "OPTIONS") return handlePreflight(req) ?? new Response(null, { status: 204 });
+      return new Response(Bun.file("frontend/forbidden.html"), { status: 403 });
+    },
   });
 
   logger.info({ port: server.port }, "Server running");
