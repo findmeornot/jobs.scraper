@@ -281,19 +281,20 @@ export async function getDashboardStats(): Promise<{
   };
   const rows = await db<StatsResult[]>`
     SELECT
-      (SELECT COUNT(*) FROM instagram_account WHERE is_active = 1) as total_accounts,
-      (SELECT COUNT(*) FROM instagram_account WHERE is_external = 1 AND is_active = 1) as external_accounts,
-      (SELECT COUNT(*) FROM instagram_content WHERE rejected_at IS NULL) as total_content,
-      (SELECT COUNT(*) FROM instagram_content WHERE confirmed_at IS NULL AND rejected_at IS NULL) as pending_content,
-      (SELECT COUNT(*) FROM instagram_content WHERE confirmed_at IS NOT NULL) as confirmed_content
+      (SELECT COUNT(*)::int FROM instagram_account WHERE is_active = 1) as total_accounts,
+      (SELECT COUNT(*)::int FROM instagram_account WHERE is_external = 1 AND is_active = 1) as external_accounts,
+      (SELECT COUNT(*)::int FROM instagram_content WHERE rejected_at IS NULL) as total_content,
+      (SELECT COUNT(*)::int FROM instagram_content WHERE confirmed_at IS NULL AND rejected_at IS NULL) as pending_content,
+      (SELECT COUNT(*)::int FROM instagram_content WHERE confirmed_at IS NOT NULL) as confirmed_content
   `;
-  return (
-    rows[0] ?? {
-      total_accounts: 0,
-      total_content: 0,
-      pending_content: 0,
-      confirmed_content: 0,
-      external_accounts: 0,
-    }
-  );
+  const row = rows[0];
+  return row
+    ? {
+        total_accounts: Number(row.total_accounts),
+        external_accounts: Number(row.external_accounts),
+        total_content: Number(row.total_content),
+        pending_content: Number(row.pending_content),
+        confirmed_content: Number(row.confirmed_content),
+      }
+    : { total_accounts: 0, external_accounts: 0, total_content: 0, pending_content: 0, confirmed_content: 0 };
 }
