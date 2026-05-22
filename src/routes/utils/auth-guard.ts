@@ -4,15 +4,11 @@ import { appConfig } from "@/config/app";
 type Handler = (req: Request) => Response | Promise<Response>;
 
 function isAuthenticated(req: Request): boolean {
+  const origin = req.headers.get("Origin") ?? "";
+  if (origin && appConfig.allowedOrigins.includes(origin)) return true;
+
   const token = parseCookieToken(req.headers.get("cookie"));
-  if (token && validateSession(token)) return true;
-
-  if (appConfig.apiKey) {
-    const auth = req.headers.get("Authorization") ?? "";
-    if (auth === `Bearer ${appConfig.apiKey}`) return true;
-  }
-
-  return false;
+  return !!token && validateSession(token);
 }
 
 export function withAuth(handler: Handler): Handler {

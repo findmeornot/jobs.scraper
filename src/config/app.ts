@@ -5,5 +5,4 @@ export const appConfig = {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),
-  apiKey: process.env.API_KEY ?? "",
 };
