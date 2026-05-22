@@ -1,4 +1,5 @@
 import { scrapePosts } from "@/scraper/index";
+import { InstagramNotFoundError } from "@/scraper/fetch";
 import { getAllAccounts, removeAccount } from "@/services/instagram-account.service";
 import { saveInstagramContent } from "@/services/instagram-content.service";
 import { scrapeLogService } from "@/services/scrape-log.service";
@@ -157,9 +158,8 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
         state.scrape_status.last_run = now().toISOString();
         await saveState(state);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes("User not found or private")) {
-          await scrapeLogService.log(sessionId, "warn", `Not found or private — deleted`, {
+        if (err instanceof InstagramNotFoundError) {
+          await scrapeLogService.log(sessionId, "warn", `Account not found — deleted`, {
             username: account.username,
           });
           deletedCount++;
@@ -168,6 +168,7 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
           );
         } else {
           errorCount++;
+          const msg = err instanceof Error ? err.message : String(err);
           await scrapeLogService.log(sessionId, "error", msg, { username: account.username });
         }
       }

@@ -1,4 +1,4 @@
-import puppeteer, { type PuppeteerLaunchOptions } from "puppeteer";
+import puppeteer, { type Page, type PuppeteerLaunchOptions } from "puppeteer";
 import { instagramConfig } from "@/config/instagram";
 import { urlToBase64 } from "@/utils/image";
 import type { ScrapedProfile, ScrapedPost, ScrapedPostsResponse } from "./types";
@@ -19,10 +19,58 @@ function delay(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// Routes all Instagram requests through the custom proxy API via request interception.
+async function withProxyInterception(page: Page): Promise<void> {
+  if (!instagramConfig.proxyUrl || !instagramConfig.proxyApiKey) return;
+
+  await page.setRequestInterception(true);
+
+  page.on("request", async (req) => {
+    const url = req.url();
+    const isInstagram =
+      url.includes("instagram.com") ||
+      url.includes("cdninstagram.com") ||
+      url.includes("fbcdn.net");
+
+    if (!isInstagram) {
+      await req.continue();
+      return;
+    }
+
+    try {
+      const resp = await fetch(`${instagramConfig.proxyUrl}/proxy`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": instagramConfig.proxyApiKey,
+        },
+        body: JSON.stringify({
+          url,
+          method: req.method(),
+          headers: req.headers(),
+          body: req.postData() ?? undefined,
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+
+      const body = Buffer.from(await resp.arrayBuffer());
+      const headers: Record<string, string> = {};
+      resp.headers.forEach((v, k) => {
+        headers[k] = v;
+      });
+
+      await req.respond({ status: resp.status, headers, body });
+    } catch {
+      await req.abort();
+    }
+  });
+}
+
 export async function puppeteerProfileId(username: string): Promise<ScrapedProfile> {
   const browser = await puppeteer.launch(LAUNCH_OPTIONS);
   try {
     const page = await browser.newPage();
+    await withProxyInterception(page);
     await page.setUserAgent(instagramConfig.userAgent);
     await page.goto(`${instagramConfig.baseUrl}/${username}/`, {
       waitUntil: "networkidle2",
@@ -50,7 +98,7 @@ export async function puppeteerHashtag(
   afterDate?: Date,
 ): Promise<ScrapedPostsResponse> {
   const browser = await puppeteer.launch({
-    ...LAUNCH_OPTIONS,
+    headless: true,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
@@ -64,6 +112,7 @@ export async function puppeteerHashtag(
     await delay(2000 + Math.floor(Math.random() * 8000));
 
     const page = await browser.newPage();
+    await withProxyInterception(page);
     await page.setUserAgent(instagramConfig.userAgent);
 
     const sessionId = instagramConfig.sessionId;
@@ -108,6 +157,7 @@ export async function puppeteerHashtag(
         try {
           await delay(2000 + Math.floor(Math.random() * 8000));
           const postPage = await browser.newPage();
+          await withProxyInterception(postPage);
           await postPage.setUserAgent(instagramConfig.userAgent);
           await postPage.goto(`${instagramConfig.baseUrl}/p/${post.shortcode}/`);
 
