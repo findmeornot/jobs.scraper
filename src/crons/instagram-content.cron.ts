@@ -204,9 +204,9 @@ export async function scrapeAllExternalAccounts(): Promise<void> {
 }
 
 export default function initContentCron(): void {
-  Bun.cron("0 20 * * *", async () => {
+  Bun.cron("0 13 * * *", async () => {
     logger.info("Starting content cron");
     await scrapeAllExternalAccounts();
   });
-  logger.info("Content cron registered: daily at 20:00 UTC");
+  logger.info("Content cron registered: daily at 20:00 WIB (13:00 UTC)");
 }
