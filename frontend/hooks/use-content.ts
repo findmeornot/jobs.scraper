@@ -3,9 +3,8 @@ import { apiFetch } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
 import type { ContentGroup, ContentItem } from "@/types";
 
-async function fetchContent(date: string, showPendingOnly: boolean): Promise<ContentGroup[]> {
+async function fetchContent(date: string): Promise<ContentGroup[]> {
   const params = new URLSearchParams({ date });
-  if (showPendingOnly) params.set("show_unverified_only", "true");
   const data = await apiFetch<{ results: ContentGroup[] }>(`/api/instagram/content?${params}`);
   const groups: ContentGroup[] = data.results ?? [];
   return groups.map((g) => ({
@@ -17,10 +16,10 @@ async function fetchContent(date: string, showPendingOnly: boolean): Promise<Con
   }));
 }
 
-export function useContent(date: string, showPendingOnly: boolean) {
+export function useContent(date: string) {
   return useQuery({
-    queryKey: ["content", date, showPendingOnly],
-    queryFn: () => fetchContent(date, showPendingOnly),
+    queryKey: ["content", date],
+    queryFn: () => fetchContent(date),
     staleTime: 30_000,
     placeholderData: keepPreviousData,
     meta: { onError: () => toast.error("Failed to load content") },

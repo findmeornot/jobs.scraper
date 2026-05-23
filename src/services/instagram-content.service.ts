@@ -20,7 +20,6 @@ export async function saveInstagramContent(data: {
 
 export async function getContentForReview(filters: {
   date?: string;
-  showUnverifiedOnly?: boolean;
 }): Promise<{
   groups: Array<{ id: number; name: string; content_count: number; content: ContentRow[] }>;
   total_content: number;

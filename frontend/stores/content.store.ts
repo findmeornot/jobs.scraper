@@ -17,8 +17,8 @@ interface ContentActions {
 export const useContentStore = create<ContentState & ContentActions>()(
   persist(
     (set) => ({
-      selectedDate: dayjs().format("YYYY-MM-DD"),
-      showPendingOnly: true,
+      selectedDate: dayjs().subtract(1, "day").format("YYYY-MM-DD"),
+      showPendingOnly: false,
       reviewerName: "",
 
       setSelectedDate: (date) => set({ selectedDate: date }),

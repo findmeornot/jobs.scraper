@@ -14,7 +14,7 @@ import { ConfirmationRateCard } from "@/components/features/dashboard/confirmati
 import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
-  const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
+  const [selectedDate, setSelectedDate] = useState(dayjs().subtract(1, "day").format("YYYY-MM-DD"));
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const { data: stats, isLoading, error, refetch } = useDashboardStats(selectedDate);
   const { isScraping, triggerScrape } = useScrape();
@@ -44,7 +44,9 @@ export default function Dashboard() {
   const other = Math.max(0, totalContent - confirmed - pending);
   const confirmRate = totalContent > 0 ? Math.round((confirmed / totalContent) * 100) : 0;
 
-  const isToday = selectedDate === dayjs().format("YYYY-MM-DD");
+  const today = dayjs().format("YYYY-MM-DD");
+  const yesterday = dayjs().subtract(1, "day").format("YYYY-MM-DD");
+  const isYesterday = selectedDate === yesterday;
 
   return (
     <div className="space-y-4">
@@ -59,23 +61,23 @@ export default function Dashboard() {
           <input
             type="date"
             value={selectedDate}
-            max={dayjs().format("YYYY-MM-DD")}
+            max={today}
             onChange={(e) => {
               setSelectedDate(e.target.value);
               setLastRefreshed(new Date());
             }}
             className="h-8 rounded-lg border border-border px-3 text-xs text-foreground bg-background appearance-none cursor-pointer hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
           />
-          {!isToday && (
+          {!isYesterday && (
             <Button
               variant="ghost"
               size="xs"
               onClick={() => {
-                setSelectedDate(dayjs().format("YYYY-MM-DD"));
+                setSelectedDate(yesterday);
                 setLastRefreshed(new Date());
               }}
             >
-              Today
+              Yesterday
             </Button>
           )}
           <Button variant="ghost" size="icon-sm" onClick={handleRefresh} aria-label="Refresh">

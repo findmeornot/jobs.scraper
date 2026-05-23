@@ -103,13 +103,9 @@ export async function deleteContentSince(since: Date): Promise<number> {
 
 export async function getContentGroupedByGroup(filters: {
   date?: string;
-  showUnverifiedOnly?: boolean;
 }): Promise<ContentRow[]> {
-  const { date, showUnverifiedOnly } = filters;
-  const unverifiedFlag = showUnverifiedOnly ? 1 : 0;
+  const { date } = filters;
 
-  // Avoid passing null as a SQL parameter (causes 42P18 indeterminate_datatype in PG).
-  // Branch so the date condition is only present when a date is actually supplied.
   if (date) {
     return db<ContentRow[]>`
       SELECT
@@ -127,7 +123,6 @@ export async function getContentGroupedByGroup(filters: {
       LEFT JOIN instagram_content ic ON ic.account_id = ia.id
         AND ic.rejected_at IS NULL
         AND ic.created_at::date = ${date}::date
-        AND (${unverifiedFlag} = 0 OR ic.confirmed_at IS NULL)
       ORDER BY mg.name ASC, ia.username ASC, ic.posted_at DESC
     `;
   }
@@ -147,7 +142,6 @@ export async function getContentGroupedByGroup(filters: {
     LEFT JOIN instagram_account ia ON ia.id = ra.account_id
     LEFT JOIN instagram_content ic ON ic.account_id = ia.id
       AND ic.rejected_at IS NULL
-      AND (${unverifiedFlag} = 0 OR ic.confirmed_at IS NULL)
     ORDER BY mg.name ASC, ia.username ASC, ic.posted_at DESC
   `;
 }

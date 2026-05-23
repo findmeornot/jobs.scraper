@@ -30,7 +30,7 @@ export default function Content() {
   } = useContentStore();
   const connected = useScrapeStore((s) => s.connected);
 
-  const { data: groups = [], isLoading, isFetching, refetch } = useContent(selectedDate, showPendingOnly);
+  const { data: groups = [], isLoading, isFetching, refetch } = useContent(selectedDate);
   const confirmContent = useConfirmContent();
   const rejectContent = useRejectContent();
   const confirm = useConfirm();
@@ -115,12 +115,18 @@ export default function Content() {
   const confirmedItems = allContent.filter((c) => c.confirmed_at !== null).length;
   const pendingItems = totalItems - confirmedItems;
   const progressPct = totalItems > 0 ? Math.round((confirmedItems / totalItems) * 100) : 0;
-  const groupsWithContent = groups.filter((g) => g.content.length > 0);
+
+  // Apply pending-only filter client-side so confirmed data stays visible when toggled
+  const filteredGroups = groups.map((g) => ({
+    ...g,
+    content: showPendingOnly ? g.content.filter((c) => c.confirmed_at === null) : g.content,
+  }));
+  const groupsWithContent = filteredGroups.filter((g) => g.content.length > 0);
 
   const displayedGroups =
     activeGroup === "all"
       ? groupsWithContent
-      : groups.filter((g) => g.id === activeGroup && g.content.length > 0);
+      : filteredGroups.filter((g) => g.id === activeGroup && g.content.length > 0);
 
   return (
     <div className="space-y-5">
@@ -201,8 +207,9 @@ export default function Content() {
             <span className="ml-1.5 opacity-60">{totalItems}</span>
           </button>
           {groupsWithContent.map((g) => {
-            const gConfirmed = g.content.filter((c) => c.confirmed_at !== null).length;
-            const allDone = gConfirmed === g.content.length;
+            const gTotal = groups.find((og) => og.id === g.id)?.content.length ?? g.content.length;
+            const gConfirmed = groups.find((og) => og.id === g.id)?.content.filter((c) => c.confirmed_at !== null).length ?? 0;
+            const allDone = gConfirmed === gTotal && gTotal > 0;
             return (
               <button
                 key={g.id}
