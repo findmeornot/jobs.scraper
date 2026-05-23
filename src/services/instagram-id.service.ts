@@ -4,7 +4,6 @@ import {
   findAllAccounts,
   findAccountsMissingInstagramId,
   upsertAccount,
-  deleteAccount,
 } from "@/repositories/instagram-account.repo";
 import { wsManager } from "@/ws/manager";
 import { logger } from "@/utils/logger";
@@ -85,25 +84,35 @@ function hasProxy(): boolean {
 
 /**
  * Fetch wrapper that routes through the haiboss proxy when configured.
- * On prod the server IP is blocked by Instagram — the proxy uses a clean residential IP.
+ * Logs proxy status and a body snippet so failures are diagnosable in prod.
  */
 async function igFetch(
   url: string,
   headers: Record<string, string>,
   signal?: AbortSignal,
 ): Promise<Response> {
-  if (hasProxy()) {
-    return fetch(`${instagramConfig.proxyUrl}/proxy`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": instagramConfig.proxyApiKey,
-      },
-      body: JSON.stringify({ url, method: "GET", headers }),
-      signal: signal ?? AbortSignal.timeout(20_000),
-    });
+  if (!hasProxy()) {
+    return fetch(url, { headers, signal: signal ?? AbortSignal.timeout(15_000) });
   }
-  return fetch(url, { headers, signal: signal ?? AbortSignal.timeout(15_000) });
+
+  logger.debug({ url, proxy: instagramConfig.proxyUrl }, "igFetch: routing through proxy");
+
+  const res = await fetch(`${instagramConfig.proxyUrl}/proxy`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": instagramConfig.proxyApiKey,
+    },
+    body: JSON.stringify({ url, method: "GET", headers }),
+    signal: signal ?? AbortSignal.timeout(20_000),
+  });
+
+  logger.info(
+    { url, proxyStatus: res.status, contentType: res.headers.get("content-type") },
+    "igFetch: proxy response",
+  );
+
+  return res;
 }
 
 function parseCount(raw: string): number {
@@ -186,7 +195,9 @@ async function resolveViaWebApi(username: string, signal?: AbortSignal): Promise
   }, signal);
 
   if (!res.ok) throw new Error(`web_profile_info (www) returned HTTP ${res.status}`);
-  return parseWebProfileInfo((await res.json()) as WebProfileInfoResponse);
+  const text = await res.text();
+  logger.debug({ username, strategy: "www", bodySnippet: text.slice(0, 300) }, "raw response body");
+  return parseWebProfileInfo(JSON.parse(text) as WebProfileInfoResponse);
 }
 
 /** Strategy 2 — web_profile_info via i.instagram.com (mobile endpoint, different rate limits) */
@@ -329,7 +340,7 @@ export async function resolveInstagramId(username: string, signal?: AbortSignal)
 export async function syncAccounts(options: {
   mode: SyncMode;
   resume?: boolean;
-}): Promise<{ processed: number; deleted: number; failed: string[] }> {
+}): Promise<{ processed: number; skipped: number; failed: string[] }> {
   if (syncState.running) {
     logger.warn("Sync already in progress — skipping");
     return { processed: 0, deleted: 0, failed: [] };
@@ -392,15 +403,10 @@ export async function syncAccounts(options: {
           aborted = true;
         } else {
           const msg = `@${account.username}: ${err instanceof Error ? err.message : "Unknown error"}`;
-          logger.error({ username: account.username }, `All strategies failed — deleting — ${msg}`);
+          logger.warn({ username: account.username }, `All strategies failed — skipping — ${msg}`);
           failed.push(msg);
           syncState.failed++;
           broadcastSyncProgress();
-          try {
-            await deleteAccount(account.id);
-          } catch (delErr) {
-            logger.error({ username: account.username, error: delErr }, "Could not delete account");
-          }
         }
       }
 
@@ -423,6 +429,6 @@ export async function syncAccounts(options: {
     broadcastSyncProgress();
   }
 
-  logger.info({ processed: syncState.processed, deleted: syncState.failed, stopped }, "Sync finished");
-  return { processed: syncState.processed, deleted: syncState.failed, failed };
+  logger.info({ processed: syncState.processed, skipped: syncState.failed, stopped }, "Sync finished");
+  return { processed: syncState.processed, skipped: syncState.failed, failed };
 }

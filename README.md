@@ -533,8 +533,8 @@ When syncing IDs the service tries five strategies in order, stopping at the fir
 | 4 | **HTML parse** | Fetches `https://www.instagram.com/{username}/` and extracts the ID from embedded JSON via five regex patterns (`profilePage_…`, `profile_id`, `user_id`, `target_id`, `owner.id`). |
 | 5 | **Puppeteer** | Headless Chromium loads the profile page; the `web_profile_info` API response is intercepted from the network. Falls back to HTML regex if the intercept misses. Slowest — last resort. |
 
-All five can optionally use `INSTAGRAM_SESSION_ID` / `INSTAGRAM_COOKIE` / `INSTAGRAM_CSRF_TOKEN` from `.env` when available.
+All five strategies route through the proxy when `PROXY_URL` + `PROXY_API_KEY` are set. When `INSTAGRAM_SESSION_ID` (or `INSTAGRAM_COOKIE`) is configured, requests are authenticated — this is required on production servers whose IPs are blocked or rate-limited by Instagram; without a session cookie all strategies will fail with 429 or a login wall.
 
-Accounts that fail all strategies are deleted from the database. The sync can be stopped mid-run and resumed from exactly where it left off, with the option to change mode (`all` vs. `empty`) on resume.
+Accounts that fail all strategies are **skipped** (left in the database unchanged). The sync can be stopped mid-run and resumed from exactly where it left off, with the option to change mode (`all` vs. `empty`) on resume.
 
 > See **[SCRAPE.md](./SCRAPE.md)** for a full breakdown of how Instagram data is scraped — profile IDs, posts, post details, likes, views, and reels.

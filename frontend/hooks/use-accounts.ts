@@ -130,7 +130,7 @@ export function useSyncAccounts() {
     } else {
       toast.success(
         "Sync complete",
-        `${syncProgress.processed}/${syncProgress.total} resolved, ${syncProgress.failed} deleted`,
+        `${syncProgress.processed}/${syncProgress.total} resolved, ${syncProgress.failed} skipped`,
       );
     }
   }, [syncProgress, qc]);
