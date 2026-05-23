@@ -1,5 +1,5 @@
 # ─── Stage 1: Dependencies ───────────────────────────────────────────────────
-FROM oven/bun:1-alpine AS deps
+FROM oven/bun:alpine AS deps
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ RUN bun install --frozen-lockfile
 
 
 # ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
-FROM oven/bun:1-alpine AS runner
+FROM oven/bun:alpine AS runner
 
 WORKDIR /app
 
