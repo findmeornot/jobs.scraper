@@ -34,9 +34,8 @@ export async function contentGet(req: Request): Promise<Response> {
   try {
     const url = new URL(req.url);
     const date = url.searchParams.get("date") ?? undefined;
-    const showUnverifiedOnly = url.searchParams.get("show_unverified_only") === "true";
 
-    const data = await getContentForReview({ date, showUnverifiedOnly });
+    const data = await getContentForReview({ date });
 
     return Response.json({
       success: true,
