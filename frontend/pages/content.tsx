@@ -30,7 +30,7 @@ export default function Content() {
   } = useContentStore();
   const connected = useScrapeStore((s) => s.connected);
 
-  const { data: groups = [], isLoading, refetch } = useContent(selectedDate, showPendingOnly);
+  const { data: groups = [], isLoading, isFetching, refetch } = useContent(selectedDate, showPendingOnly);
   const confirmContent = useConfirmContent();
   const rejectContent = useRejectContent();
   const confirm = useConfirm();
@@ -129,7 +129,7 @@ export default function Content() {
         <div>
           <h2 className="text-xl font-semibold tracking-tight">Content Review</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {isLoading
+            {isFetching
               ? "Loading…"
               : `${pendingItems} pending · ${confirmedItems} confirmed · ${groupsWithContent.length} groups`}
           </p>
@@ -140,7 +140,7 @@ export default function Content() {
           editingReviewer={editingReviewer}
           date={selectedDate}
           showPendingOnly={showPendingOnly}
-          loading={isLoading}
+          loading={isFetching}
           onReviewerDraftChange={setReviewerDraft}
           onSaveReviewer={saveReviewer}
           onEditReviewer={() => {
@@ -228,6 +228,7 @@ export default function Content() {
       {isLoading ? (
         <ContentSkeleton />
       ) : (
+        <div className={isFetching ? "opacity-60 pointer-events-none transition-opacity" : undefined}>
         <ContentGrid
           groups={displayedGroups}
           reviewer={reviewerName}
@@ -238,6 +239,7 @@ export default function Content() {
           onLightbox={setLightboxUrl}
           onShowAll={() => setShowPendingOnly(false)}
         />
+        </div>
       )}
 
       <ContentLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />

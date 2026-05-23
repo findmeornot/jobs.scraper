@@ -265,7 +265,7 @@ export async function getEmptyGroupNames(date?: string): Promise<string[]> {
   return rows.map((r) => r.group_name);
 }
 
-export async function getDashboardStats(): Promise<{
+export async function getDashboardStats(date?: string): Promise<{
   total_accounts: number;
   total_content: number;
   pending_content: number;
@@ -279,14 +279,25 @@ export async function getDashboardStats(): Promise<{
     pending_content: number;
     confirmed_content: number;
   };
-  const rows = await db<StatsResult[]>`
-    SELECT
-      (SELECT COUNT(*)::int FROM instagram_account WHERE is_active = 1) as total_accounts,
-      (SELECT COUNT(*)::int FROM instagram_account WHERE is_external = 1 AND is_active = 1) as external_accounts,
-      (SELECT COUNT(*)::int FROM instagram_content WHERE rejected_at IS NULL) as total_content,
-      (SELECT COUNT(*)::int FROM instagram_content WHERE confirmed_at IS NULL AND rejected_at IS NULL) as pending_content,
-      (SELECT COUNT(*)::int FROM instagram_content WHERE confirmed_at IS NOT NULL) as confirmed_content
-  `;
+
+  const rows = date
+    ? await db<StatsResult[]>`
+        SELECT
+          (SELECT COUNT(*)::int FROM instagram_account WHERE is_active = 1) as total_accounts,
+          (SELECT COUNT(*)::int FROM instagram_account WHERE is_external = 1 AND is_active = 1) as external_accounts,
+          (SELECT COUNT(*)::int FROM instagram_content WHERE rejected_at IS NULL AND created_at::date = ${date}::date) as total_content,
+          (SELECT COUNT(*)::int FROM instagram_content WHERE confirmed_at IS NULL AND rejected_at IS NULL AND created_at::date = ${date}::date) as pending_content,
+          (SELECT COUNT(*)::int FROM instagram_content WHERE confirmed_at IS NOT NULL AND created_at::date = ${date}::date) as confirmed_content
+      `
+    : await db<StatsResult[]>`
+        SELECT
+          (SELECT COUNT(*)::int FROM instagram_account WHERE is_active = 1) as total_accounts,
+          (SELECT COUNT(*)::int FROM instagram_account WHERE is_external = 1 AND is_active = 1) as external_accounts,
+          (SELECT COUNT(*)::int FROM instagram_content WHERE rejected_at IS NULL) as total_content,
+          (SELECT COUNT(*)::int FROM instagram_content WHERE confirmed_at IS NULL AND rejected_at IS NULL) as pending_content,
+          (SELECT COUNT(*)::int FROM instagram_content WHERE confirmed_at IS NOT NULL) as confirmed_content
+      `;
+
   const row = rows[0];
   return row
     ? {

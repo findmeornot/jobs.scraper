@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
 import type { ContentGroup, ContentItem } from "@/types";
@@ -21,6 +21,8 @@ export function useContent(date: string, showPendingOnly: boolean) {
   return useQuery({
     queryKey: ["content", date, showPendingOnly],
     queryFn: () => fetchContent(date, showPendingOnly),
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
     meta: { onError: () => toast.error("Failed to load content") },
   });
 }

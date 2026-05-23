@@ -14,8 +14,9 @@ import { ConfirmationRateCard } from "@/components/features/dashboard/confirmati
 import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
+  const [selectedDate, setSelectedDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
-  const { data: stats, isLoading, error, refetch } = useDashboardStats();
+  const { data: stats, isLoading, error, refetch } = useDashboardStats(selectedDate);
   const { isScraping, triggerScrape } = useScrape();
   const isPaused = useScrapeStore((s) => s.isPaused);
 
@@ -43,6 +44,8 @@ export default function Dashboard() {
   const other = Math.max(0, totalContent - confirmed - pending);
   const confirmRate = totalContent > 0 ? Math.round((confirmed / totalContent) * 100) : 0;
 
+  const isToday = selectedDate === dayjs().format("YYYY-MM-DD");
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -53,6 +56,28 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <input
+            type="date"
+            value={selectedDate}
+            max={dayjs().format("YYYY-MM-DD")}
+            onChange={(e) => {
+              setSelectedDate(e.target.value);
+              setLastRefreshed(new Date());
+            }}
+            className="h-8 rounded-lg border border-border px-3 text-xs text-foreground bg-background appearance-none cursor-pointer hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          {!isToday && (
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => {
+                setSelectedDate(dayjs().format("YYYY-MM-DD"));
+                setLastRefreshed(new Date());
+              }}
+            >
+              Today
+            </Button>
+          )}
           <Button variant="ghost" size="icon-sm" onClick={handleRefresh} aria-label="Refresh">
             <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
           </Button>

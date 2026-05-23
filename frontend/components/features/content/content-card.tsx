@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import {
   Check,
   X,
@@ -34,6 +34,8 @@ function ContentImage({ src, alt, onClick }: { src: string; alt?: string; onClic
     <img
       src={proxyUrl(src)}
       alt={alt ?? ""}
+      loading="lazy"
+      decoding="async"
       className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-[1.03]"
       onError={() => setError(true)}
       onClick={onClick}
@@ -50,7 +52,7 @@ interface ContentCardProps {
   pending: boolean;
 }
 
-export function ContentCard({
+export const ContentCard = memo(function ContentCard({
   item,
   reviewer,
   onConfirm,
@@ -260,7 +262,7 @@ export function ContentCard({
       </div>
     </div>
   );
-}
+});
 
 export function ContentCardSkeleton() {
   return (

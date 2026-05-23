@@ -3,15 +3,17 @@ import { apiFetch } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
 import type { DashboardStats } from "@/types";
 
-async function fetchStats(): Promise<DashboardStats> {
-  const data = await apiFetch<{ data: DashboardStats }>("/api/dashboard/stats");
+async function fetchStats(date?: string): Promise<DashboardStats> {
+  const params = date ? `?date=${date}` : "";
+  const data = await apiFetch<{ data: DashboardStats }>(`/api/dashboard/stats${params}`);
   return data.data;
 }
 
-export function useDashboardStats() {
+export function useDashboardStats(date?: string) {
   return useQuery({
-    queryKey: ["dashboard-stats"],
-    queryFn: fetchStats,
+    queryKey: ["dashboard-stats", date ?? "all"],
+    queryFn: () => fetchStats(date),
+    staleTime: 30_000,
     meta: { onError: () => toast.error("Failed to load dashboard stats") },
   });
 }

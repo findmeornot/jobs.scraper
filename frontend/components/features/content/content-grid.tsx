@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { FileImage } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContentCard } from "./content-card";
@@ -12,7 +13,7 @@ interface GroupSectionProps {
   onLightbox: (url: string) => void;
 }
 
-function GroupSection({
+const GroupSection = memo(function GroupSection({
   group,
   reviewer,
   pendingIds,
@@ -58,7 +59,7 @@ function GroupSection({
       </div>
     </div>
   );
-}
+});
 
 interface ContentGridProps {
   groups: ContentGroup[];
