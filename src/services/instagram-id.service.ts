@@ -79,6 +79,33 @@ function buildCookieHeader(): string {
     .join("; ");
 }
 
+function hasProxy(): boolean {
+  return !!(instagramConfig.proxyUrl && instagramConfig.proxyApiKey);
+}
+
+/**
+ * Fetch wrapper that routes through the haiboss proxy when configured.
+ * On prod the server IP is blocked by Instagram — the proxy uses a clean residential IP.
+ */
+async function igFetch(
+  url: string,
+  headers: Record<string, string>,
+  signal?: AbortSignal,
+): Promise<Response> {
+  if (hasProxy()) {
+    return fetch(`${instagramConfig.proxyUrl}/proxy`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": instagramConfig.proxyApiKey,
+      },
+      body: JSON.stringify({ url, method: "GET", headers }),
+      signal: signal ?? AbortSignal.timeout(20_000),
+    });
+  }
+  return fetch(url, { headers, signal: signal ?? AbortSignal.timeout(15_000) });
+}
+
 function parseCount(raw: string): number {
   const s = raw.replace(/,/g, "").trim();
   if (/k$/i.test(s)) return Math.round(parseFloat(s) * 1_000);
@@ -147,19 +174,16 @@ async function resolveViaWebApi(username: string, signal?: AbortSignal): Promise
   const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`;
   const cookie = buildCookieHeader();
 
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent": WEB_UA,
-      "x-ig-app-id": instagramConfig.appId || IG_APP_ID,
-      Accept: "*/*",
-      "Accept-Language": "en-US,en;q=0.9",
-      Referer: `https://www.instagram.com/${username}/`,
-      "X-Requested-With": "XMLHttpRequest",
-      ...(cookie && { Cookie: cookie }),
-      ...(instagramConfig.csrfToken && { "x-csrftoken": instagramConfig.csrfToken }),
-    },
-    signal: signal ?? AbortSignal.timeout(10_000),
-  });
+  const res = await igFetch(url, {
+    "User-Agent": WEB_UA,
+    "x-ig-app-id": instagramConfig.appId || IG_APP_ID,
+    Accept: "*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+    Referer: `https://www.instagram.com/${username}/`,
+    "X-Requested-With": "XMLHttpRequest",
+    ...(cookie && { Cookie: cookie }),
+    ...(instagramConfig.csrfToken && { "x-csrftoken": instagramConfig.csrfToken }),
+  }, signal);
 
   if (!res.ok) throw new Error(`web_profile_info (www) returned HTTP ${res.status}`);
   return parseWebProfileInfo((await res.json()) as WebProfileInfoResponse);
@@ -170,27 +194,40 @@ async function resolveViaMobileApi(username: string, signal?: AbortSignal): Prom
   const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`;
   const cookie = buildCookieHeader();
 
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent": MOBILE_UA,
-      "x-ig-app-id": instagramConfig.appId || IG_APP_ID,
-      Accept: "*/*",
-      "Accept-Language": "en-US,en;q=0.9",
-      ...(cookie && { Cookie: cookie }),
-    },
-    signal: signal ?? AbortSignal.timeout(10_000),
-  });
+  const res = await igFetch(url, {
+    "User-Agent": MOBILE_UA,
+    "x-ig-app-id": instagramConfig.appId || IG_APP_ID,
+    Accept: "*/*",
+    "Accept-Language": "en-US,en;q=0.9",
+    ...(cookie && { Cookie: cookie }),
+  }, signal);
 
   if (!res.ok) throw new Error(`web_profile_info (i.instagram.com) returned HTTP ${res.status}`);
   return parseWebProfileInfo((await res.json()) as WebProfileInfoResponse);
 }
 
-/** Strategy 3 — curl with mobile UA (different TLS fingerprint than Bun fetch, bypasses fingerprint detection) */
-async function resolveViaCurl(username: string): Promise<ResolvedId> {
+/**
+ * Strategy 3 — proxy fetch with curl TLS fingerprint, or direct curl when no proxy.
+ * When proxy is set, routes through haiboss (clean IP) instead of using the server's blocked IP.
+ */
+async function resolveViaCurl(username: string, signal?: AbortSignal): Promise<ResolvedId> {
   const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`;
   const appId = instagramConfig.appId || IG_APP_ID;
   const cookie = buildCookieHeader();
 
+  if (hasProxy()) {
+    // Proxy already gives us a clean IP — no need for curl's TLS trick
+    const res = await igFetch(url, {
+      "User-Agent": MOBILE_UA,
+      "x-ig-app-id": appId,
+      "Accept-Language": "en-US,en;q=0.9",
+      ...(cookie && { Cookie: cookie }),
+    }, signal);
+    if (!res.ok) throw new Error(`web_profile_info via proxy returned HTTP ${res.status}`);
+    return parseWebProfileInfo((await res.json()) as WebProfileInfoResponse);
+  }
+
+  // No proxy — use curl's different TLS fingerprint for local/dev
   const args = [
     "curl", "-sf", "--max-time", "15",
     "-A", MOBILE_UA,
@@ -208,15 +245,12 @@ async function resolveViaCurl(username: string): Promise<ResolvedId> {
 /** Strategy 4 — Extract ID from raw profile HTML (multiple regex patterns) */
 async function resolveViaHtmlParse(username: string, signal?: AbortSignal): Promise<ResolvedId> {
   const cookie = buildCookieHeader();
-  const res = await fetch(`${instagramConfig.baseUrl}/${username}/`, {
-    headers: {
-      "User-Agent": WEB_UA,
-      "Accept-Language": "en-US,en;q=0.9",
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      ...(cookie && { Cookie: cookie }),
-    },
-    signal: signal ?? AbortSignal.timeout(15_000),
-  });
+  const res = await igFetch(`${instagramConfig.baseUrl}/${username}/`, {
+    "User-Agent": WEB_UA,
+    "Accept-Language": "en-US,en;q=0.9",
+    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    ...(cookie && { Cookie: cookie }),
+  }, signal);
 
   if (!res.ok) throw new Error(`Profile page returned HTTP ${res.status}`);
 
