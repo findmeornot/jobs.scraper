@@ -343,7 +343,7 @@ export async function syncAccounts(options: {
 }): Promise<{ processed: number; skipped: number; failed: string[] }> {
   if (syncState.running) {
     logger.warn("Sync already in progress — skipping");
-    return { processed: 0, deleted: 0, failed: [] };
+    return { processed: 0, skipped: 0, failed: [] };
   }
 
   _stopRequested = false;
