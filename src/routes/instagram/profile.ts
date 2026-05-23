@@ -11,6 +11,7 @@ import {
 } from "@/services/instagram-account.service";
 import { resolveInstagramId, syncAccounts, requestSyncStop } from "@/services/instagram-id.service";
 import { findRegionAccountsByAccountId } from "@/repositories/region-account.repo";
+import { insertAccountIfNotExists } from "@/repositories/instagram-account.repo";
 
 const profilePostSchema = z.object({
   usernames: z.array(z.string().min(1)).min(1),
@@ -140,9 +141,31 @@ export async function profileAccountRegions(req: Request): Promise<Response> {
 
 async function processUsername(username: string) {
   try {
-    const { id, followers, following } = await resolveInstagramId(username);
-    await saveOrUpdateAccount({ instagram_id: id, username, followers, following });
-    return { success: true, userId: id, username };
+    // 20 s budget covers www + mobile + curl strategies; Puppeteer (30 s nav timeout)
+    // is too slow for a synchronous create request — if fast strategies fail we still
+    // save the account without an ID and let the user sync IDs separately.
+    let resolved: { id: string; followers: number; following: number } | null = null;
+    try {
+      resolved = await resolveInstagramId(username, AbortSignal.timeout(20_000));
+    } catch (resolveErr) {
+      logger.warn(
+        { username, error: resolveErr instanceof Error ? resolveErr.message : resolveErr },
+        "ID resolution failed on create — saving account without ID",
+      );
+    }
+
+    if (resolved) {
+      await saveOrUpdateAccount({
+        instagram_id: resolved.id,
+        username,
+        followers: resolved.followers,
+        following: resolved.following,
+      });
+      return { success: true, userId: resolved.id, username };
+    }
+
+    await insertAccountIfNotExists({ username, is_external: false });
+    return { success: true, userId: null, username, note: "Saved without ID — use Sync IDs to resolve" };
   } catch (error) {
     return {
       success: false,

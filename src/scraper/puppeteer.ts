@@ -102,7 +102,7 @@ export async function puppeteerProfileId(username: string): Promise<ScrapedProfi
 
     await page.goto(`${instagramConfig.baseUrl}/${username}/`, {
       waitUntil: "networkidle2",
-      timeout: 30_000,
+      timeout: 15_000,
     });
 
     if (intercepted) return intercepted;

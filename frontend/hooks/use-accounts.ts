@@ -38,13 +38,18 @@ export function useAddAccount() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: AccountFormData) =>
-      apiFetch("/api/instagram/profile", {
+      apiFetch<{ results: Array<{ userId: string | null; note?: string }> }>("/api/instagram/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ usernames: [data.username] }),
       }),
-    onSuccess: () => {
-      toast.success("Account added");
+    onSuccess: (res) => {
+      const result = res?.results?.[0];
+      if (result?.userId === null) {
+        toast.info("Account saved", result.note ?? "Use Sync IDs to resolve the Instagram ID");
+      } else {
+        toast.success("Account added");
+      }
       qc.invalidateQueries({ queryKey: ["accounts"] });
     },
     onError: (error) =>
