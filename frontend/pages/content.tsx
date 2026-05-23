@@ -30,7 +30,7 @@ export default function Content() {
   } = useContentStore();
   const connected = useScrapeStore((s) => s.connected);
 
-  const { data: groups = [], isLoading, isFetching, refetch } = useContent(selectedDate);
+  const { data: groups = [], isLoading, isFetching, isPlaceholderData, refetch } = useContent(selectedDate);
   const confirmContent = useConfirmContent();
   const rejectContent = useRejectContent();
   const confirm = useConfirm();
@@ -232,10 +232,9 @@ export default function Content() {
       )}
 
       {/* Content */}
-      {isLoading ? (
+      {isLoading || (isFetching && isPlaceholderData) ? (
         <ContentSkeleton />
       ) : (
-        <div className={isFetching ? "opacity-60 pointer-events-none transition-opacity" : undefined}>
         <ContentGrid
           groups={displayedGroups}
           reviewer={reviewerName}
@@ -246,7 +245,6 @@ export default function Content() {
           onLightbox={setLightboxUrl}
           onShowAll={() => setShowPendingOnly(false)}
         />
-        </div>
       )}
 
       <ContentLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />

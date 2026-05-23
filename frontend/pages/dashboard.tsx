@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 export default function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(dayjs().subtract(1, "day").format("YYYY-MM-DD"));
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
-  const { data: stats, isLoading, error, refetch } = useDashboardStats(selectedDate);
+  const { data: stats, isLoading, isFetching, isPlaceholderData, error, refetch } = useDashboardStats(selectedDate);
   const { isScraping, triggerScrape } = useScrape();
   const isPaused = useScrapeStore((s) => s.isPaused);
 
@@ -25,7 +25,7 @@ export default function Dashboard() {
     setLastRefreshed(new Date());
   }, [refetch]);
 
-  if (isLoading) return <DashboardSkeleton />;
+  if (isLoading || (isFetching && isPlaceholderData)) return <DashboardSkeleton />;
 
   if (error) {
     return (
