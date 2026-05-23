@@ -66,9 +66,18 @@ async function stopAwareDelay(ms: number): Promise<void> {
   }
 }
 
-const WEB_UA =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+const WEB_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 const IG_APP_ID = "936619743392459";
+
+function buildCookieHeader(): string {
+  if (instagramConfig.cookie) return instagramConfig.cookie;
+  return [
+    instagramConfig.sessionId && `sessionid=${instagramConfig.sessionId}`,
+    instagramConfig.csrfToken && `csrftoken=${instagramConfig.csrfToken}`,
+  ]
+    .filter(Boolean)
+    .join("; ");
+}
 
 function parseCount(raw: string): number {
   const s = raw.replace(/,/g, "").trim();
@@ -109,40 +118,23 @@ interface ResolvedId {
   following: number;
 }
 
-/** Strategy 1 — Instagram web_profile_info API (fastest, no auth needed) */
-async function resolveViaWebApi(username: string, signal?: AbortSignal): Promise<ResolvedId> {
-  const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`;
+const MOBILE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
 
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent": WEB_UA,
-      "x-ig-app-id": IG_APP_ID,
-      Accept: "*/*",
-      "Accept-Language": "en-US,en;q=0.9",
-      Referer: `https://www.instagram.com/${username}/`,
-      "X-Requested-With": "XMLHttpRequest",
-    },
-    signal: signal ?? AbortSignal.timeout(10_000),
-  });
-
-  if (!res.ok) throw new Error(`web_profile_info returned HTTP ${res.status}`);
-
-  interface WebProfileInfoResponse {
-    data?: {
-      user?: {
-        id?: string;
-        follower_count?: number;
-        following_count?: number;
-        edge_followed_by?: { count: number };
-        edge_follow?: { count: number };
-      };
+interface WebProfileInfoResponse {
+  data?: {
+    user?: {
+      id?: string;
+      follower_count?: number;
+      following_count?: number;
+      edge_followed_by?: { count: number };
+      edge_follow?: { count: number };
     };
-  }
-  const json = (await res.json()) as WebProfileInfoResponse;
+  };
+}
+
+function parseWebProfileInfo(json: WebProfileInfoResponse): ResolvedId {
   const user = json?.data?.user;
-
   if (!user?.id) throw new Error("No user.id in web_profile_info response");
-
   return {
     id: String(user.id),
     followers: Number(user.follower_count ?? user.edge_followed_by?.count ?? 0),
@@ -150,10 +142,79 @@ async function resolveViaWebApi(username: string, signal?: AbortSignal): Promise
   };
 }
 
-/** Strategy 2 — Extract ID from raw profile HTML (multiple regex patterns) */
+/** Strategy 1 — web_profile_info via www (desktop) */
+async function resolveViaWebApi(username: string, signal?: AbortSignal): Promise<ResolvedId> {
+  const url = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`;
+  const cookie = buildCookieHeader();
+
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": WEB_UA,
+      "x-ig-app-id": instagramConfig.appId || IG_APP_ID,
+      Accept: "*/*",
+      "Accept-Language": "en-US,en;q=0.9",
+      Referer: `https://www.instagram.com/${username}/`,
+      "X-Requested-With": "XMLHttpRequest",
+      ...(cookie && { Cookie: cookie }),
+      ...(instagramConfig.csrfToken && { "x-csrftoken": instagramConfig.csrfToken }),
+    },
+    signal: signal ?? AbortSignal.timeout(10_000),
+  });
+
+  if (!res.ok) throw new Error(`web_profile_info (www) returned HTTP ${res.status}`);
+  return parseWebProfileInfo((await res.json()) as WebProfileInfoResponse);
+}
+
+/** Strategy 2 — web_profile_info via i.instagram.com (mobile endpoint, different rate limits) */
+async function resolveViaMobileApi(username: string, signal?: AbortSignal): Promise<ResolvedId> {
+  const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`;
+  const cookie = buildCookieHeader();
+
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": MOBILE_UA,
+      "x-ig-app-id": instagramConfig.appId || IG_APP_ID,
+      Accept: "*/*",
+      "Accept-Language": "en-US,en;q=0.9",
+      ...(cookie && { Cookie: cookie }),
+    },
+    signal: signal ?? AbortSignal.timeout(10_000),
+  });
+
+  if (!res.ok) throw new Error(`web_profile_info (i.instagram.com) returned HTTP ${res.status}`);
+  return parseWebProfileInfo((await res.json()) as WebProfileInfoResponse);
+}
+
+/** Strategy 3 — curl with mobile UA (different TLS fingerprint than Bun fetch, bypasses fingerprint detection) */
+async function resolveViaCurl(username: string): Promise<ResolvedId> {
+  const url = `https://i.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(username)}`;
+  const appId = instagramConfig.appId || IG_APP_ID;
+  const cookie = buildCookieHeader();
+
+  const args = [
+    "curl", "-sf", "--max-time", "15",
+    "-A", MOBILE_UA,
+    "-H", `x-ig-app-id: ${appId}`,
+    "-H", "Accept-Language: en-US,en;q=0.9",
+    ...(cookie ? ["-H", `Cookie: ${cookie}`] : []),
+    url,
+  ];
+
+  const result = await Bun.$`${args}`.text();
+  const json = JSON.parse(result) as WebProfileInfoResponse;
+  return parseWebProfileInfo(json);
+}
+
+/** Strategy 4 — Extract ID from raw profile HTML (multiple regex patterns) */
 async function resolveViaHtmlParse(username: string, signal?: AbortSignal): Promise<ResolvedId> {
+  const cookie = buildCookieHeader();
   const res = await fetch(`${instagramConfig.baseUrl}/${username}/`, {
-    headers: { "User-Agent": WEB_UA },
+    headers: {
+      "User-Agent": WEB_UA,
+      "Accept-Language": "en-US,en;q=0.9",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      ...(cookie && { Cookie: cookie }),
+    },
     signal: signal ?? AbortSignal.timeout(15_000),
   });
 
@@ -184,7 +245,7 @@ async function resolveViaHtmlParse(username: string, signal?: AbortSignal): Prom
   return { id, followers, following };
 }
 
-/** Strategy 3 — Puppeteer (slow, last resort) */
+/** Strategy 4 — Puppeteer (intercepts web_profile_info response, fallback to HTML) */
 async function resolveViaPuppeteer(username: string): Promise<ResolvedId> {
   const profile = await puppeteerProfileId(username);
   return {
@@ -196,11 +257,13 @@ async function resolveViaPuppeteer(username: string): Promise<ResolvedId> {
 
 /**
  * Resolves the Instagram numeric user ID for a given username.
- * Tries three strategies in order: web API → HTML parse → Puppeteer.
+ * Tries in order: www fetch → mobile fetch → curl (different TLS fingerprint) → HTML parse → Puppeteer.
  */
 export async function resolveInstagramId(username: string, signal?: AbortSignal): Promise<ResolvedId> {
   const strategies = [
-    { name: "web_profile_info API", fn: () => resolveViaWebApi(username, signal) },
+    { name: "web_profile_info (www)", fn: () => resolveViaWebApi(username, signal) },
+    { name: "web_profile_info (mobile)", fn: () => resolveViaMobileApi(username, signal) },
+    { name: "curl (mobile UA)", fn: () => resolveViaCurl(username) },
     { name: "HTML parse", fn: () => resolveViaHtmlParse(username, signal) },
     { name: "Puppeteer", fn: () => resolveViaPuppeteer(username) },
   ];

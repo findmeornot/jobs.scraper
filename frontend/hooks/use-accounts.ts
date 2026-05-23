@@ -47,7 +47,8 @@ export function useAddAccount() {
       toast.success("Account added");
       qc.invalidateQueries({ queryKey: ["accounts"] });
     },
-    onError: () => toast.error("Failed to add account"),
+    onError: (error) =>
+      toast.error("Failed to add account", error instanceof Error ? error.message : undefined),
   });
 }
 

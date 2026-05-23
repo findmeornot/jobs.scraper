@@ -72,13 +72,43 @@ export async function puppeteerProfileId(username: string): Promise<ScrapedProfi
     const page = await browser.newPage();
     await withProxyInterception(page);
     await page.setUserAgent(instagramConfig.userAgent);
+    if (instagramConfig.sessionId) {
+      await page.setCookie({ name: "sessionid", value: instagramConfig.sessionId, domain: ".instagram.com" });
+    }
+    if (instagramConfig.csrfToken) {
+      await page.setCookie({ name: "csrftoken", value: instagramConfig.csrfToken, domain: ".instagram.com" });
+    }
+
+    let intercepted: ScrapedProfile | null = null;
+
+    // Intercept the web_profile_info API that Instagram fires automatically on page load
+    page.on("response", async (response) => {
+      if (intercepted) return;
+      if (!response.url().includes("web_profile_info")) return;
+      try {
+        const json = await response.json() as {
+          data?: { user?: { id?: string; follower_count?: number; following_count?: number } };
+        };
+        const user = json?.data?.user;
+        if (user?.id) {
+          intercepted = {
+            id: user.id,
+            followers: String(user.follower_count ?? 0),
+            following: String(user.following_count ?? 0),
+          };
+        }
+      } catch {}
+    });
+
     await page.goto(`${instagramConfig.baseUrl}/${username}/`, {
       waitUntil: "networkidle2",
       timeout: 30_000,
     });
 
-    const content = await page.content();
+    if (intercepted) return intercepted;
 
+    // Fallback: parse rendered HTML
+    const content = await page.content();
     const idMatch =
       content.match(/"profilePage_(\d+)"/) ??
       content.match(/"profile_id":"(\d+)"/) ??

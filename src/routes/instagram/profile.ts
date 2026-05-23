@@ -49,6 +49,14 @@ export async function profilePost(req: Request): Promise<Response> {
     if (!parsed.success) return err(parsed.error.issues[0]?.message ?? "Invalid input");
 
     const results = await Promise.all(parsed.data.usernames.map(processUsername));
+    const failed = results.filter((r) => !r.success);
+
+    if (failed.length === results.length) {
+      return Response.json({ success: false, results }, { status: 422 });
+    }
+    if (failed.length > 0) {
+      return Response.json({ success: false, results }, { status: 207 });
+    }
     return Response.json({ success: true, results });
   } catch (error) {
     logger.error({ error }, "profilePost failed");
@@ -132,8 +140,8 @@ export async function profileAccountRegions(req: Request): Promise<Response> {
 
 async function processUsername(username: string) {
   try {
-    const { id } = await resolveInstagramId(username);
-    await saveOrUpdateAccount({ instagram_id: id, username, followers: 0, following: 0 });
+    const { id, followers, following } = await resolveInstagramId(username);
+    await saveOrUpdateAccount({ instagram_id: id, username, followers, following });
     return { success: true, userId: id, username };
   } catch (error) {
     return {

@@ -485,7 +485,7 @@ scrape_session ──> scrape_log
 | `id` | `SERIAL PK` | |
 | `instagram_id` | `VARCHAR UNIQUE NULL` | Numeric IG user ID |
 | `username` | `VARCHAR UNIQUE` | Instagram handle (no `@`) |
-| `followers` | `INTEGER` | Not actively scraped; kept at 0 |
+| `followers` | `INTEGER` | Populated on ID resolution; not updated on every scrape |
 | `following` | `INTEGER` | |
 | `is_external` | `SMALLINT` | `1` = external, `0` = internal |
 | `is_active` | `SMALLINT` | `1` = active |
@@ -523,10 +523,18 @@ scrape_session ──> scrape_log
 
 ## Instagram ID Resolution Strategy
 
-When syncing IDs the service tries three strategies in order, stopping at the first success:
+When syncing IDs the service tries five strategies in order, stopping at the first success:
 
-1. **Web Profile Info API** (`/api/v1/users/web_profile_info/`) — fastest, no auth required
-2. **HTML parse** — fetches the profile page and extracts the ID from embedded JSON via regex
-3. **Puppeteer** — headless browser fallback (slowest, last resort)
+| # | Strategy | Details |
+|---|----------|---------|
+| 1 | **web_profile_info (www)** | `GET https://www.instagram.com/api/v1/users/web_profile_info/?username=…` with desktop UA. Fast, no auth required when not rate-limited. |
+| 2 | **web_profile_info (mobile)** | Same endpoint on `i.instagram.com` with iPhone UA. Separate rate-limit bucket from the www endpoint. |
+| 3 | **curl (mobile UA)** | Shells out to `curl` against `i.instagram.com`. curl's TLS ClientHello fingerprint differs from Bun's built-in fetch, bypassing Instagram's TLS-based bot detection. |
+| 4 | **HTML parse** | Fetches `https://www.instagram.com/{username}/` and extracts the ID from embedded JSON via five regex patterns (`profilePage_…`, `profile_id`, `user_id`, `target_id`, `owner.id`). |
+| 5 | **Puppeteer** | Headless Chromium loads the profile page; the `web_profile_info` API response is intercepted from the network. Falls back to HTML regex if the intercept misses. Slowest — last resort. |
 
-Accounts that fail all three strategies are deleted. The sync can be stopped mid-run and resumed later from exactly where it left off, with the option to switch mode (sync all vs. sync missing only) on resume.
+All five can optionally use `INSTAGRAM_SESSION_ID` / `INSTAGRAM_COOKIE` / `INSTAGRAM_CSRF_TOKEN` from `.env` when available.
+
+Accounts that fail all strategies are deleted from the database. The sync can be stopped mid-run and resumed from exactly where it left off, with the option to change mode (`all` vs. `empty`) on resume.
+
+> See **[SCRAPE.md](./SCRAPE.md)** for a full breakdown of how Instagram data is scraped — profile IDs, posts, post details, likes, views, and reels.

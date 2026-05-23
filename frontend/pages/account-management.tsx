@@ -92,8 +92,12 @@ export default function AccountManagement() {
   }
 
   async function handleAdd(data: AccountFormData): Promise<boolean> {
-    await addAccount.mutateAsync(data);
-    return true;
+    try {
+      await addAccount.mutateAsync(data);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async function handleEdit(data: EditAccountFormData): Promise<boolean> {
