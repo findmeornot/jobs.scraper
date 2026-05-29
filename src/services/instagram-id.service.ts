@@ -137,13 +137,13 @@ export function extractCountsFromHtml(html: string): { followers: number; follow
   // Fallback: exact counts in embedded JSON
   const followers = Number(
     html.match(/"follower_count":(\d+)/)?.[1] ??
-      html.match(/"edge_followed_by":\{"count":(\d+)\}/)?.[1] ??
-      0,
+    html.match(/"edge_followed_by":\{"count":(\d+)\}/)?.[1] ??
+    0,
   );
   const following = Number(
     html.match(/"following_count":(\d+)/)?.[1] ??
-      html.match(/"edge_follow":\{"count":(\d+)\}/)?.[1] ??
-      0,
+    html.match(/"edge_follow":\{"count":(\d+)\}/)?.[1] ??
+    0,
   );
   return { followers, following };
 }
@@ -300,6 +300,30 @@ async function resolveViaPuppeteer(username: string): Promise<ResolvedId> {
   };
 }
 
+/** Strategy 2.5 — Magic Parameters (?__a=1&__d=dis) */
+async function resolveViaMagic(username: string, signal?: AbortSignal): Promise<ResolvedId> {
+  const url = `${instagramConfig.baseUrl}/${encodeURIComponent(username)}/?__a=1&__d=dis`;
+  const cookie = buildCookieHeader();
+
+  const res = await igFetch(url, {
+    "User-Agent": WEB_UA,
+    "x-ig-app-id": instagramConfig.appId || IG_APP_ID,
+    "Accept-Language": "en-US,en;q=0.9",
+    ...(cookie && { Cookie: cookie }),
+  }, signal);
+
+  if (!res.ok) throw new Error(`Magic API returned HTTP ${res.status}`);
+  const json = await res.json() as any;
+  const user = json?.graphql?.user || json?.user || json?.data?.user;
+  if (!user?.id) throw new Error("No user.id in magic response");
+
+  return {
+    id: String(user.id),
+    followers: Number(user.edge_followed_by?.count ?? user.follower_count ?? 0),
+    following: Number(user.edge_follow?.count ?? user.following_count ?? 0),
+  };
+}
+
 /**
  * Resolves the Instagram numeric user ID for a given username.
  * Tries in order: www fetch → mobile fetch → curl (different TLS fingerprint) → HTML parse → Puppeteer.
@@ -308,6 +332,7 @@ export async function resolveInstagramId(username: string, signal?: AbortSignal)
   const strategies = [
     { name: "web_profile_info (www)", fn: () => resolveViaWebApi(username, signal) },
     { name: "web_profile_info (mobile)", fn: () => resolveViaMobileApi(username, signal) },
+    { name: "magic_api (?__a=1)", fn: () => resolveViaMagic(username, signal) },
     { name: "curl (mobile UA)", fn: () => resolveViaCurl(username) },
     { name: "HTML parse", fn: () => resolveViaHtmlParse(username, signal) },
     { name: "Puppeteer", fn: () => resolveViaPuppeteer(username) },
@@ -331,8 +356,7 @@ export async function resolveInstagramId(username: string, signal?: AbortSignal)
   }
 
   throw new Error(
-    `All strategies failed for @${username}: ${
-      lastError instanceof Error ? lastError.message : "Unknown error"
+    `All strategies failed for @${username}: ${lastError instanceof Error ? lastError.message : "Unknown error"
     }`,
   );
 }
@@ -416,7 +440,7 @@ export async function syncAccounts(options: {
         break;
       }
 
-      await stopAwareDelay(2_000);
+      await stopAwareDelay(3000 + Math.floor(Math.random() * 3000)); // 3-6s delay to prevent proxy ban
     }
   } finally {
     syncState = {
