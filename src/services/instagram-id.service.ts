@@ -82,9 +82,13 @@ function hasProxy(): boolean {
   return !!(instagramConfig.proxyUrl && instagramConfig.proxyApiKey);
 }
 
+const MAX_RETRIES = 3;
+/** Base wait for 429 backoff in ms — doubles each retry: 30s, 60s, 120s */
+const RATE_LIMIT_BASE_MS = 30_000;
+
 /**
  * Fetch wrapper that routes through the haiboss proxy when configured.
- * Logs proxy status and a body snippet so failures are diagnosable in prod.
+ * Automatically retries on HTTP 429 with exponential backoff (max 3 retries).
  */
 async function igFetch(
   url: string,
@@ -97,22 +101,37 @@ async function igFetch(
 
   logger.debug({ url, proxy: instagramConfig.proxyUrl }, "igFetch: routing through proxy");
 
-  const res = await fetch(`${instagramConfig.proxyUrl}/proxy`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": instagramConfig.proxyApiKey,
-    },
-    body: JSON.stringify({ url, method: "GET", headers }),
-    signal: signal ?? AbortSignal.timeout(20_000),
-  });
+  let attempt = 0;
+  while (true) {
+    const res = await fetch(`${instagramConfig.proxyUrl}/proxy`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": instagramConfig.proxyApiKey,
+      },
+      body: JSON.stringify({ url, method: "GET", headers }),
+      signal: signal ?? AbortSignal.timeout(20_000),
+    });
 
-  logger.info(
-    { url, proxyStatus: res.status, contentType: res.headers.get("content-type") },
-    "igFetch: proxy response",
-  );
+    logger.info(
+      { url, proxyStatus: res.status, attempt, contentType: res.headers.get("content-type") },
+      "igFetch: proxy response",
+    );
 
-  return res;
+    if (res.status !== 429 || attempt >= MAX_RETRIES) return res;
+
+    const retryAfterHeader = res.headers.get("retry-after");
+    const waitMs = retryAfterHeader
+      ? Number(retryAfterHeader) * 1_000
+      : RATE_LIMIT_BASE_MS * Math.pow(2, attempt);
+
+    attempt++;
+    logger.warn(
+      { url, attempt, waitMs },
+      `igFetch: 429 rate limited — waiting ${waitMs / 1000}s before retry ${attempt}/${MAX_RETRIES}`,
+    );
+    await new Promise<void>((r) => setTimeout(r, waitMs));
+  }
 }
 
 function parseCount(raw: string): number {
@@ -300,30 +319,6 @@ async function resolveViaPuppeteer(username: string): Promise<ResolvedId> {
   };
 }
 
-/** Strategy 2.5 — Magic Parameters (?__a=1&__d=dis) */
-async function resolveViaMagic(username: string, signal?: AbortSignal): Promise<ResolvedId> {
-  const url = `${instagramConfig.baseUrl}/${encodeURIComponent(username)}/?__a=1&__d=dis`;
-  const cookie = buildCookieHeader();
-
-  const res = await igFetch(url, {
-    "User-Agent": WEB_UA,
-    "x-ig-app-id": instagramConfig.appId || IG_APP_ID,
-    "Accept-Language": "en-US,en;q=0.9",
-    ...(cookie && { Cookie: cookie }),
-  }, signal);
-
-  if (!res.ok) throw new Error(`Magic API returned HTTP ${res.status}`);
-  const json = await res.json() as any;
-  const user = json?.graphql?.user || json?.user || json?.data?.user;
-  if (!user?.id) throw new Error("No user.id in magic response");
-
-  return {
-    id: String(user.id),
-    followers: Number(user.edge_followed_by?.count ?? user.follower_count ?? 0),
-    following: Number(user.edge_follow?.count ?? user.following_count ?? 0),
-  };
-}
-
 /**
  * Resolves the Instagram numeric user ID for a given username.
  * Tries in order: www fetch → mobile fetch → curl (different TLS fingerprint) → HTML parse → Puppeteer.
@@ -332,7 +327,6 @@ export async function resolveInstagramId(username: string, signal?: AbortSignal)
   const strategies = [
     { name: "web_profile_info (www)", fn: () => resolveViaWebApi(username, signal) },
     { name: "web_profile_info (mobile)", fn: () => resolveViaMobileApi(username, signal) },
-    { name: "magic_api (?__a=1)", fn: () => resolveViaMagic(username, signal) },
     { name: "curl (mobile UA)", fn: () => resolveViaCurl(username) },
     { name: "HTML parse", fn: () => resolveViaHtmlParse(username, signal) },
     { name: "Puppeteer", fn: () => resolveViaPuppeteer(username) },
@@ -440,7 +434,7 @@ export async function syncAccounts(options: {
         break;
       }
 
-      await stopAwareDelay(3000 + Math.floor(Math.random() * 3000)); // 3-6s delay to prevent proxy ban
+      await stopAwareDelay(5_000);
     }
   } finally {
     syncState = {
